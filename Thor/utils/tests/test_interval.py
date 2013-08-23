@@ -74,3 +74,27 @@ with when.two_intervals_merge:
 
     with provided.one_interval_includes_the_other:
         merged_interval_should_follow_spec((0, 10), (5, 8), (0, 10))
+
+with given.an_interval:
+
+    i = Interval(0, 10)
+
+    with then.the_length_should_be_correct:
+        the(i.length).should.equal(10)
+
+with given.two_intervals:
+
+    with provided.have_the_same_left_tip_but_distince_right_tip:
+        i = Interval(0, 10)
+        j = Interval(0, 5)
+        this(i).should_NOT.equal(j)
+
+    with provided.have_the_same_right_tip_but_distinct_left_tip:
+        i = Interval(5, 10)
+        j = Interval(0, 10)
+        this(i).should_NOT.equal(j)
+
+    with provided.the_same_left_right_tips:
+        i = Interval(0, 10)
+        j = Interval(0, 10)
+        this(i).should.equal(j)
