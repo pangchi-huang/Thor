@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+from contextlib import closing
 from os.path import exists
 from setuptools import setup, find_packages
 
 from Thor import __version__
+
+with closing(open('requirements.txt')) as f:
+    requires = f.read().splitlines()
 
 setup(
     name='Thor',
@@ -23,7 +27,5 @@ setup(
     description='',
     long_description=open('README.md').read() if exists("README.md") else "",
     # Any requirements here, e.g. "Django >= 1.1.1"
-    install_requires=[
-
-    ],
+    install_requires=requires,
 )
