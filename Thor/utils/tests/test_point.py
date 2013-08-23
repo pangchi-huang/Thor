@@ -62,3 +62,15 @@ with given.two_random_points:
 
         with then.the_result_should_be_correct:
             the(abs(p)).should.equal(5)
+
+    with when.test_whether_or_not_equals:
+
+        with then.the_result_should_be_correct:
+            i = Point(3, 4)
+            j = Point(3, 4)
+            the(i).should.equal(j)
+            the(j).should.equal(i)
+
+            j = Point(4, 3)
+            the(i).should_NOT.equal(j)
+            the(j).should_NOT.equal(i)

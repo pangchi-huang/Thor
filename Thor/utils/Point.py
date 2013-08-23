@@ -91,3 +91,16 @@ class Point(object):
 
         dx, dy = self.x - other.x, self.y - other.y
         return dx * dx + dy * dy
+
+    def __eq__(self, other):
+        """Test equality.
+
+        Args:
+            other: A Point instance.
+
+        Returns:
+            A bool.
+
+        """
+
+        return self.x == other.x and self.y == other.y
