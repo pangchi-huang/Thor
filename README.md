@@ -19,5 +19,11 @@ My pdf prototype tool
  - Run all tests
   - `pyspecs_.py`
 
+## TroubleShooting
+
+ - If `Symbol not found: ___xmlStructuredErrorContext` error occured, try
+    pip uninstall lxml
+    STATIC_DEPS=true pip install lxml
+
   [1]: http://poppler.freedesktop.org/poppler-0.24.0.tar.xz
   [2]: http://poppler.freedesktop.org/poppler-data-0.4.6.tar.gz
