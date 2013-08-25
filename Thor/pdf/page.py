@@ -10,6 +10,7 @@ from pyquery import PyQuery
 import ujson
 
 # local library imports
+from Thor.utils.Rectangle import Rectangle
 
 
 __all__ = ['PDFPage']
@@ -211,8 +212,16 @@ def _create_page(filename, page_num, page_data):
     media_box, crop_box = box_dict['media'], box_dict['crop']
     _transform_to_crop_box_space(page_data, media_box, crop_box)
 
+    # filter out words out of boundary
+    words = []
+    world_rect = Rectangle(0, 0, page_data['width'], page_data['height'])
+    for word in page_data['data']:
+        rect = Rectangle(word['x'], word['y'], word['w'], word['h'])
+        if rect & world_rect is not None:
+            words.append(word)
+
     return PDFPage(page_num=page_num, width=page_data['width'],
-                   height=page_data['height'], words=page_data['data'])
+                   height=page_data['height'], words=words)
 
 def _transform_to_crop_box_space(data, media_box, crop_box):
 
