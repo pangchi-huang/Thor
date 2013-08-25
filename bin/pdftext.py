@@ -102,7 +102,7 @@ def count_pages(pdf_file):
 
 def run(input_filename, page_nums, page_dir, output_filename):
 
-    pages = PDFPage.extract_text(input_filename, page_nums)
+    pages = PDFPage.extract_texts(input_filename, page_nums)
 
     if page_dir is not None:
         for p in pages:

@@ -51,19 +51,19 @@ with given.a_pdf:
     with when.extract_texts_from_it:
 
         with then.default_is_to_extract_from_all_pages:
-            pages = PDFPage.extract_text(sample_pdf)
+            pages = PDFPage.extract_texts(sample_pdf)
             the(len(pages)).should.equal(4)
             for ix, page in enumerate(pages):
                 the(page.page_num).should.equal(ix + 1)
 
         with and_.it_can_extract_specified_pages_as_well:
-            pages = PDFPage.extract_text(sample_pdf, (1, 3,))
+            pages = PDFPage.extract_texts(sample_pdf, (1, 3,))
             the(len(pages)).should.equal(2)
             the(pages[0].page_num).should.equal(1)
             the(pages[1].page_num).should.equal(3)
 
         with and_.no_word_is_outside_crop_box:
-            pages = PDFPage.extract_text(sample_pdf)
+            pages = PDFPage.extract_texts(sample_pdf)
             for page in pages:
                 crop_box = Rectangle(0, 0, page.width, page.height)
 
@@ -72,6 +72,10 @@ with given.a_pdf:
                                          word['w'], word['h'])
                     the(crop_box.intersect(word_box)).should_NOT.be(None)
 
+        with and_.it_can_keep_text_in_content_stream_order:
+            for i in xrange(1, 4 + 1):
+                raw_textual_objects = PDFPage.extract_raw_texts(sample_pdf, i)
+                print raw_textual_objects
 
     with when.serialize_it_to_json:
 

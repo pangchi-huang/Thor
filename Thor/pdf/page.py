@@ -85,7 +85,7 @@ class PDFPage(object):
         return ujson.dumps(page.__json__(), ensure_ascii=False)
 
     @classmethod
-    def extract_text(cls, filename, pages=None):
+    def extract_texts(cls, filename, pages=None):
         """Create a bunch of PDFPages by xpdf utility program `pdftotext`.
 
         Args:
@@ -167,6 +167,25 @@ class PDFPage(object):
 
         return ret
 
+    @classmethod
+    def extract_raw_texts(cls, filename, page_num):
+        """Extract texts from pdf and keep in content stream order.
+
+        Args:
+            filename: The absolute path of the specified pdf document.
+            page_num: The number of page to extract. Should be 1-based.
+
+        Returns:
+            A list.
+
+        """
+
+        with closing(NamedTemporaryFile()) as f:
+            cmd = ('pdftotext', '-raw', filename, f.name)
+            subprocess.check_call(cmd)
+            ret = f.read()
+
+        return ret.decode('utf8').splitlines()
 
 def _parse_word_bboxes(html):
 
