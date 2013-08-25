@@ -9,6 +9,7 @@ import ujson
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.utils.Rectangle import Rectangle
 
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -55,11 +56,22 @@ with given.a_pdf:
             for ix, page in enumerate(pages):
                 the(page.page_num).should.equal(ix + 1)
 
-        with then.it_can_extract_specified_pages_as_well:
+        with and_.it_can_extract_specified_pages_as_well:
             pages = PDFPage.extract_text(sample_pdf, (1, 3,))
             the(len(pages)).should.equal(2)
             the(pages[0].page_num).should.equal(1)
             the(pages[1].page_num).should.equal(3)
+
+        with and_.no_word_is_outside_crop_box:
+            pages = PDFPage.extract_text(sample_pdf)
+            for page in pages:
+                crop_box = Rectangle(0, 0, page.width, page.height)
+
+                for word in page.words:
+                    word_box = Rectangle(word['x'], word['y'],
+                                         word['w'], word['h'])
+                    the(crop_box.intersect(word_box)).should_NOT.be(None)
+
 
     with when.serialize_it_to_json:
 

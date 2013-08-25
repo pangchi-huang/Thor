@@ -212,16 +212,10 @@ def _create_page(filename, page_num, page_data):
     media_box, crop_box = box_dict['media'], box_dict['crop']
     _transform_to_crop_box_space(page_data, media_box, crop_box)
 
-    # filter out words out of boundary
-    words = []
-    world_rect = Rectangle(0, 0, page_data['width'], page_data['height'])
-    for word in page_data['data']:
-        rect = Rectangle(word['x'], word['y'], word['w'], word['h'])
-        if rect & world_rect is not None:
-            words.append(word)
+    width, height = page_data['width'], page_data['height']
+    words = _filter_invisible_words(width, height, page_data['data'])
 
-    return PDFPage(page_num=page_num, width=page_data['width'],
-                   height=page_data['height'], words=words)
+    return PDFPage(page_num=page_num, width=width, height=height, words=words)
 
 def _transform_to_crop_box_space(data, media_box, crop_box):
 
@@ -231,3 +225,14 @@ def _transform_to_crop_box_space(data, media_box, crop_box):
     for txt_obj in data['data']:
         txt_obj['x'] -= crop_box[0]
         txt_obj['y'] -= crop_box[1]
+
+def _filter_invisible_words(width, height, words):
+
+    ret = []
+    world_rect = Rectangle(0, 0, width, height)
+    for word in words:
+        rect = Rectangle(word['x'], word['y'], word['w'], word['h'])
+        if rect & world_rect is not None:
+            ret.append(word)
+
+    return ret
