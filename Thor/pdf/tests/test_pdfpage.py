@@ -24,7 +24,7 @@ with given.a_pdf:
         trim_box = (36.85, 36.85, 646.30, 816.38)
         art_box = (36.85, 36.85, 646.30, 816.38)
 
-        bboxes = PDFPage.get_page_bbox(sample_pdf, 1)
+        bboxes = PDFPage.get_page_bboxes(sample_pdf, 1)
 
         def bboxes_almost_the_same(bbox1, bbox2):
             for i in xrange(4):
@@ -64,7 +64,7 @@ with given.a_pdf:
     with when.serialize_it_to_json:
 
         p = PDFPage(page_num=1, width=99.9, height=55.5)
-        p.data = [
+        p.words = [
             {'x': 0, 'y': 0, 'w': 100, 'h': 30, 't': u'GG'},
             {'x': 100, 'y': 250, 'w': 60, 'h': 120, 't': u'drink water'},
         ]
@@ -80,10 +80,10 @@ with given.a_pdf:
         with and_.height_should_be_correct:
             the(abs(deserialized['height'] - 55.5)).should.be_less_than(1.0e-3)
 
-        with and_.data_should_be_correct:
+        with and_.words_should_be_correct:
             for word_ix, word in enumerate(deserialized['data']):
                 for key in word:
-                    the(word[key]).should.equal(p.data[word_ix][key])
+                    the(word[key]).should.equal(p.words[word_ix][key])
 
     with when.deserialize_from_json:
 
@@ -109,7 +109,7 @@ with given.a_pdf:
         with and_.height_should_be_correct:
             the(abs(p.height - 1.618)).should.be_less_than(1.0e-3)
 
-        with and_.data_should_be_correct:
+        with and_.words_should_be_correct:
             for word_ix, word in enumerate(deserialized['data']):
                 for key in word:
-                    the(word[key]).should.equal(p.data[word_ix][key])
+                    the(word[key]).should.equal(p.words[word_ix][key])

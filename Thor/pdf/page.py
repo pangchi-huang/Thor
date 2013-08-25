@@ -22,16 +22,16 @@ class PDFPage(object):
         page_num: An integer indicating the current page number.
         width: The width of the page
         height: The height of the page
-        data: A list of text with bounding box information.
+        words: A list of words with bounding box information.
 
     """
 
-    def __init__(self, page_num=0, width=0, height=0, data=None):
+    def __init__(self, page_num=0, width=0, height=0, words=None):
 
         self.page_num = page_num
         self.width = width
         self.height = height
-        self.data = data
+        self.words = words
 
     def __json__(self):
 
@@ -39,7 +39,7 @@ class PDFPage(object):
             'page': self.page_num,
             'width': self.width,
             'height': self.height,
-            'data': self.data
+            'data': self.words,
         }
 
     def serialize(self):
@@ -65,7 +65,7 @@ class PDFPage(object):
         ret.page_num = deserialized.get('page', 0)
         ret.width = deserialized.get('width', 0)
         ret.height = deserialized.get('height', 0)
-        ret.data = deserialized.get('data')
+        ret.words = deserialized.get('data')
 
         return ret
 
@@ -103,14 +103,10 @@ class PDFPage(object):
             with closing(NamedTemporaryFile()) as f:
                 cmd = ('pdftotext', '-bbox', filename, f.name)
                 subprocess.check_call(cmd)
-                parsed_pages = _parse_bboxes(f.name)
+                parsed_pages = _parse_word_bboxes(f.name)
 
             for ix, page_data in enumerate(parsed_pages):
-                box_dict = cls.get_page_bbox(filename, ix + 1)
-                media_box, crop_box = box_dict['media'], box_dict['crop']
-                _transform_to_crop_box_space(page_data, media_box, crop_box)
-                ret.append(PDFPage(ix + 1, page_data['width'],
-                                   page_data['height'], page_data['data']))
+                ret.append(_create_page(filename, ix + 1, page_data))
 
             return ret
 
@@ -119,18 +115,14 @@ class PDFPage(object):
                 cmd = ('pdftotext', '-bbox', '-f', str(p), '-l', str(p),
                        filename, f.name)
                 subprocess.check_call(cmd)
-                parsed_page = _parse_bboxes(f.name)[0]
+                parsed_page = _parse_word_bboxes(f.name)[0]
 
-            box_dict = cls.get_page_bbox(filename, p)
-            media_box, crop_box = box_dict['media'], box_dict['crop']
-            _transform_to_crop_box_space(parsed_page, media_box, crop_box)
-            ret.append(PDFPage(p, parsed_page['width'],
-                               parsed_page['height'], parsed_page['data']))
+            ret.append(_create_page(filename, p, parsed_page))
 
         return ret
 
     @classmethod
-    def get_page_bbox(cls, filename, page_num):
+    def get_page_bboxes(cls, filename, page_num):
         """
         Get media box, crop box, bleed box, trim box, art box
         information of the specified PDF page.
@@ -175,7 +167,7 @@ class PDFPage(object):
         return ret
 
 
-def _parse_bboxes(html):
+def _parse_word_bboxes(html):
 
     with closing(open(html, 'rb')) as f:
         html_txt = f.read().decode('utf8')
@@ -212,6 +204,15 @@ def _parse_bboxes(html):
         pages.append(page_obj)
 
     return pages
+
+def _create_page(filename, page_num, page_data):
+
+    box_dict = PDFPage.get_page_bboxes(filename, page_num)
+    media_box, crop_box = box_dict['media'], box_dict['crop']
+    _transform_to_crop_box_space(page_data, media_box, crop_box)
+
+    return PDFPage(page_num=page_num, width=page_data['width'],
+                   height=page_data['height'], words=page_data['data'])
 
 def _transform_to_crop_box_space(data, media_box, crop_box):
 
