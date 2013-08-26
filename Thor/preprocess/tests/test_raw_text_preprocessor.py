@@ -158,17 +158,17 @@ with given.a_RawTextPreprocessor:
     with when.no_merging_can_happen_then_stop:
 
         page = preprocessor.run()
-        ground_truth = [
+        ground_truth = (
             {"y": 118.722, "x": 12.1784, "t": u"時尚雜誌", "w": 42.827, "h": 11.865},
             {"y": 130.7226, "x": 12.1784, "t": u"國際中文版", "w": 53.336, "h": 11.865},
-            {"y": 144.654006, "x": 12.5228, "t": u"2012", "w": 20.814614, "h": 11.984454},
-            {"y": 144.654006, "x": 35.561237, "t": u"MAY.", "w": 19.921363, "h": 11.984454},
+            # '2012' + 'MAY.'
+            {"y": 144.654006, "x": 12.5228, "t": u"2012 MAY.", "w": 42.9598, "h": 11.984454},
             {"y": 154.8611, "x": 12.5228, "t": u"五月號", "w": 23.504355, "h": 8.49555},
             {"y": 319.18122, "x": 487.9074, "t": u"×", "w": 29.5682, "h": 31.04661},
-            {"y": 382.944349, "x": 533.6083, "t": u"iP", "w": 26.560456, "h": 40.366466},
-            {"y": 381.568049, "x": 558.3705, "t": u"ad", "w": 33.938153, "h": 43.055866},
-            {"y": 413.696101, "x": 515.9054, "t": u"version", "w": 46.59239, "h": 20.978034},
-            {"y": 413.696101, "x": 565.882481, "t": u"now", "w": 26.742586, "h": 20.978034},
+            # 'iP' + 'ad'
+            {"y": 381.568049, "x": 533.6083, "t": u"iPad", "w": 58.700353, "h": 43.055866},
+            # 'version' + 'now'
+            {"y": 413.696101, "x": 515.9054, "t": u"version now", "w": 76.719667, "h": 20.978034},
             {"y": 437.181069, "x": 560.539641, "t": u"UE", "w": 0.894074, "h": 0.767728},
             {"y": 439.015641, "x": 559.871997, "t": u"W", "w": 0.894074, "h": 0.682647},
             {"y": 440.109072, "x": 559.474071, "t": u"N", "w": 0.894074, "h": 0.52179},
@@ -182,18 +182,39 @@ with given.a_RawTextPreprocessor:
             {"y": 463.426795, "x": 561.28425, "t": u"wh", "w": 2.205666, "h": 1.911012},
             {"y": 460.360882, "x": 564.733068, "t": u"ck", "w": 4.934952, "h": 6.170964},
             {"y": 464.411419, "x": 563.989649, "t": u"te", "w": 1.517046, "h": 1.911013},
-            {"y": 607.500171, "x": 328.8189, "t": u"super", "w": 40.940574, "h": 16.540941},
-            {"y": 607.500171, "x": 374.714777, "t": u"vogue", "w": 42.992488, "h": 16.540941},
-            {"y": 607.500171, "x": 422.662568, "t": u"editorial", "w": 60.133649, "h": 16.540941},
-            {"y": 607.500171, "x": 487.75152, "t": u"feature", "w": 52.093495, "h": 16.540941},
+            # 'super' + 'vogue' + 'editorial' + 'feature'
+            {"y": 607.500171, "x": 328.8189, "t": u"super vogue editorial feature", "w": 211.026115, "h": 16.540941},
             {"y": 717.345409, "x": 149.5275, "t": u"and", "w": 82.005896, "h": 51.334911},
             {"y": 717.345409, "x": 246.912209, "t": u"white", "w": 122.987183, "h": 51.334911},
-            {"y": 695.3894, "x": 518.4401, "t": u"定價", "w": 17.9998, "h": 10.5},
-            {"y": 694.9794, "x": 538.689875, "t": u"NT$200", "w": 32.525639, "h": 12.21},
-            {"y": 695.3894, "x": 573.465489, "t": u"元", "w": 8.9999, "h": 10.5},
-            {"y": 751.5268, "x": 518.4016, "t": u"www.vogue.com.tw", "w": 63.714, "h": 8.351}
-        ]
+            # '定價' + 'NT$200' + '元'
+            {"y": 694.9794, "x": 518.4401, "t": u"定價 NT$200 元", "w": 64.025289, "h": 12.21},
+            {"y": 751.5268, "x": 518.4016, "t": u"www.vogue.com.tw", "w": 63.714, "h": 8.351},
+        )
+
         the(page.page_num).should.equal(1)
         the(abs(page.width - 609.45)).should.be_less_than(1.0e-3)
         the(abs(page.height - 779.53)).should.be_less_than(1.0e-3)
+        the(len(page.words)).should.equal(len(ground_truth))
 
+        merged_word_map = {
+            u"2012 MAY.": ground_truth[2],
+            u"iPad": ground_truth[5],
+            u"version now": ground_truth[6],
+            u"super vogue editorial feature": ground_truth[20],
+            u"定價 NT$200 元": ground_truth[23],
+        }
+        for merged_word in merged_word_map:
+            expected_word = merged_word_map[merged_word]
+            found = False
+
+            for word in page.words:
+                if word['t'] == merged_word:
+                    for attr in 'xywh':
+                        print attr, word[attr], expected_word[attr]
+                        the(abs(word[attr] - expected_word[attr])).\
+                        should.be_less_than(1.0e-3)
+
+                    found = True
+                    break
+
+            the(found).should.be(True)
