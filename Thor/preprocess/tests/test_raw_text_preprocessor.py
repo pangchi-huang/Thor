@@ -24,20 +24,21 @@ with given.a_RawTextPreprocessor:
     with closing(open(sample_json)) as f:
         sample = ujson.loads(f.read().decode('utf8'))
 
-    preprocessor = RawTextPreprocessor(PDFPage(page_num=sample['page'],
-                                               width=sample['width'],
-                                               height=sample['height'],
-                                               words=sample['data']))
+    preprocessor = RawTextPreprocessor(
+        sample_pdf,
+        PDFPage(page_num=sample['page'], width=sample['width'],
+                height=sample['height'], words=sample['data'])
+    )
 
     with then.it_extracts_texts_in_content_stream_order:
 
-        raw_texts = RawTextPreprocessor.get_raw_texts(sample_pdf, 1)
+        raw_texts = preprocessor.page.extract_raw_texts(sample_pdf, 1)
         with closing(open(sample_raw)) as f:
             expected = f.read().decode('utf8').splitlines()
 
-        the(len(raw_texts)).should.equal(len(expected))
-        for ix, raw in enumerate(raw_texts):
-            the(raw).should.equal(expected[ix])
+        # XXX The last raw stream is form feed, we ignore it.
+        for i in xrange(22):
+            the(raw_texts[i]).should.equal(expected[i])
 
     with then.each_word_obj_should_locate_itself_in_every_possible_raw_stream:
 
@@ -71,7 +72,7 @@ with given.a_RawTextPreprocessor:
             (u'ck', ((6, 3, 5), (18, 3, 5),)),
             (u'te', ((7, 7, 9), (20, 0, 2),)),
             (u'super', ((9, 0, 5),)),
-            (u'vogue', ((9, 6, 11),)),
+            (u'vogue', ((5, 4, 9), (9, 6, 11),)),
             # 25
             (u'editorial', ((9, 12, 21),)),
             (u'feature', ((9, 22, 29),)),
@@ -85,9 +86,9 @@ with given.a_RawTextPreprocessor:
         )
 
         for ix, word in enumerate(preprocessor.words):
-            expected = word[1]
+            expected = ground_truth[ix][1]
             the(len(word.matches)).should.equal(len(expected))
-            for match_ix, match in word.matches:
+            for match_ix, match in enumerate(word.matches):
                 the(match.index).should.equal(expected[match_ix][0])
                 the(match.start).should.equal(expected[match_ix][1])
                 the(match.end).should.equal(expected[match_ix][2])
@@ -102,7 +103,7 @@ with given.a_RawTextPreprocessor:
             (u'五月號', ((4, 0, 3),)),
             (u'定價 NT$200 元', ((12, 3, 4), (29, 0, 2), (30, 3, 9), (31, 10, 11))),
             # 5
-            (u'www.vogue.com.tw', ((32, 0, 16),)),
+            (u'www.vogue.com.tw', ((24, 4, 9), (32, 0, 16),)),
             (u'black', ((17, 0, 3), (19, 0, 5), (21, 3, 5),)),
             (u'and white', ((18, 0, 3), (20, 4, 6), (22, 7, 9), (27, 0, 3), (28, 4, 9),)),
             (u'×', ((5, 0, 1), (15, 0, 1),)),
@@ -126,9 +127,9 @@ with given.a_RawTextPreprocessor:
         )
 
         for ix, raw_stream in enumerate(preprocessor.raw_streams):
-            expected = raw_stream[1]
+            expected = ground_truth[ix][1]
             the(len(raw_stream.matches)).should.equal(len(expected))
-            for match_ix, match in raw_stream.matches:
+            for match_ix, match in enumerate(raw_stream.matches):
                 the(match.index).should.equal(expected[match_ix][0])
                 the(match.start).should.equal(expected[match_ix][1])
                 the(match.end).should.equal(expected[match_ix][2])
@@ -139,18 +140,19 @@ with given.a_RawTextPreprocessor:
 
             with so.they_can_be_merged:
 
-                may_merge_streams = (0, 1, 3, 5, 9, 10, 11, 12, 14, 15, 20,)
+                may_merge_streams = (0, 1, 3, 9, 10, 11, 12, 14, 15, 20,)
                 for ix, raw_stream in enumerate(preprocessor.raw_streams):
                     result = ix in may_merge_streams
                     the(raw_stream.may_merge()).should.be(result)
 
                 for ix in may_merge_streams:
-                    preprocessor.raw_streams[ix].merge()
+                    preprocessor._merge(ix)
 
         with and_.the_words_cannot_match_other_raw_stream_anymore:
 
             the(preprocessor.raw_streams[2].may_merge()).should.be(True)
             the(preprocessor.raw_streams[4].may_merge()).should.be(True)
+            the(preprocessor.raw_streams[5].may_merge()).should.be(True)
             the(preprocessor.raw_streams[17].may_merge()).should.be(True)
 
     with when.no_merging_can_happen_then_stop:
