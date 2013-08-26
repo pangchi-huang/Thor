@@ -6,9 +6,10 @@
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.utils.Rectangle import Rectangle
 
 
-__all__ = ['RawTextPreprocessor']
+__all__ = ['RawTextPreprocessor', 'RawTextPreprocessorException']
 
 
 class RawTextPreprocessorException(Exception): pass
@@ -58,6 +59,7 @@ class RawTextPreprocessor(object):
                 self.words[word_ix].matches
             )
 
+
             for stream_ix in xrange(len(self.raw_streams)):
                 if stream_ix == raw_stream_ix:
                     continue
@@ -67,8 +69,51 @@ class RawTextPreprocessor(object):
                     self.raw_streams[stream_ix].matches
                 )
 
+        first_word = self.words[word_indices[0]]
+        union = Rectangle(first_word['x'], first_word['y'],
+                          first_word['w'], first_word['h'])
+        for word_ix in word_indices:
+            word = self.words[word_ix]
+            union |= Rectangle(word['x'], word['y'], word['w'], word['h'])
+
+        return {
+            'x': union.x, 'y': union.y,
+            'w': union.w, 'h': union.h,
+            't': raw_stream._stream,
+        }
+
     def run(self):
-        return
+        """TODO"""
+
+        ret = PDFPage(page_num=self.page.page_num,
+                      width=self.page.width,
+                      height=self.page.height,
+                      words=[])
+
+        can_merge_streams = set()
+        while True:
+            keep_merging = False
+            for stream_ix, stream in enumerate(self.raw_streams):
+                if stream.may_merge() and stream_ix not in can_merge_streams:
+                    can_merge_streams.add(stream_ix)
+                    ret.words.append(self._merge(stream_ix))
+                    keep_merging = True
+
+            if not keep_merging:
+                break
+
+
+        word_flags = [True] * len(self.words)
+        for stream_ix in can_merge_streams:
+            stream = self.raw_streams[stream_ix]
+            for match in stream.matches:
+                word_flags[match.index] = False
+
+        for word_ix, word in enumerate(self.words):
+            if word_flags[word_ix]:
+                ret.words.append(word._word_obj)
+
+        return ret
 
 
 class Word(object):
