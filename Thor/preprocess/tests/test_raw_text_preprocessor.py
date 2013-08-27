@@ -155,6 +155,14 @@ with given.a_RawTextPreprocessor:
             the(preprocessor.raw_streams[5].may_merge()).should.be(True)
             the(preprocessor.raw_streams[17].may_merge()).should.be(True)
 
+    with provided.a_raw_stream_has_overlapping_words_and_at_least_3_words:
+
+        with then.it_should_try_to_discard_outlier_words:
+
+            the(preprocessor.raw_streams[19].discard_outliers()).should.be(True)
+            the(preprocessor.raw_streams[7].discard_outliers()).should.be(True)
+
+
     with when.no_merging_can_happen_then_stop:
 
         page = preprocessor.run()
@@ -176,16 +184,16 @@ with given.a_RawTextPreprocessor:
             {"y": 450.863501, "x": 555.707907, "t": u"W", "w": 0.608609, "h": 0.389801},
             {"y": 452.542475, "x": 574.8132, "t": u"×", "w": 1.0151, "h": 1.155729},
             {"y": 459.192314, "x": 552.528451, "t": u"NO", "w": 0.894074, "h": 1.048896},
-            {"y": 458.00912, "x": 558.2718, "t": u"bla", "w": 6.379428, "h": 6.226071},
-            {"y": 462.209952, "x": 557.9408, "t": u"and", "w": 2.815459, "h": 2.594674},
+            # 'bla' + 'ck'
+            {"y": 458.00912, "x": 558.2718, "t": u"black", "w": 11.39622, "h": 8.522726},
+            # 'and' + 'wh'
+            {"y": 462.209952, "x": 557.9408, "t": u"and wh", "w": 5.549116, "h": 3.127855},
             {"y": 603.913793, "x": 143.8582, "t": u"black", "w": 331.948884, "h": 141.242165},
-            {"y": 463.426795, "x": 561.28425, "t": u"wh", "w": 2.205666, "h": 1.911012},
-            {"y": 460.360882, "x": 564.733068, "t": u"ck", "w": 4.934952, "h": 6.170964},
             {"y": 464.411419, "x": 563.989649, "t": u"te", "w": 1.517046, "h": 1.911013},
             # 'super' + 'vogue' + 'editorial' + 'feature'
             {"y": 607.500171, "x": 328.8189, "t": u"super vogue editorial feature", "w": 211.026115, "h": 16.540941},
-            {"y": 717.345409, "x": 149.5275, "t": u"and", "w": 82.005896, "h": 51.334911},
-            {"y": 717.345409, "x": 246.912209, "t": u"white", "w": 122.987183, "h": 51.334911},
+            # 'and' + 'white'
+            {"y": 717.345409, "x": 149.5275, "t": u"and white", "w": 220.371892, "h": 51.334911},
             # '定價' + 'NT$200' + '元'
             {"y": 694.9794, "x": 518.4401, "t": u"定價 NT$200 元", "w": 64.025289, "h": 12.21},
             {"y": 751.5268, "x": 518.4016, "t": u"www.vogue.com.tw", "w": 63.714, "h": 8.351},
@@ -200,9 +208,13 @@ with given.a_RawTextPreprocessor:
             u"2012 MAY.": ground_truth[2],
             u"iPad": ground_truth[5],
             u"version now": ground_truth[6],
-            u"super vogue editorial feature": ground_truth[20],
-            u"定價 NT$200 元": ground_truth[23],
+            u"black": ground_truth[14],
+            u"and wh": ground_truth[15],
+            u"super vogue editorial feature": ground_truth[18],
+            u"and white": ground_truth[19],
+            u"定價 NT$200 元": ground_truth[20],
         }
+
         for merged_word in merged_word_map:
             expected_word = merged_word_map[merged_word]
             found = False

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 # standard library imports
+from itertools import combinations, permutations
 
 # third party related imports
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.utils.Point import Point
 from Thor.utils.Rectangle import Rectangle
 
 
@@ -103,10 +105,14 @@ class RawTextPreprocessor(object):
         while keep_merging:
             keep_merging = False
             for stream_ix, stream in enumerate(self.raw_streams):
-                if stream_ix not in can_merge_streams and stream.may_merge():
-                    can_merge_streams.add(stream_ix)
-                    ret.words.append(self._merge_words_of_stream(stream_ix))
-                    keep_merging = True
+                if stream_ix not in can_merge_streams:
+                    if not stream.may_merge():
+                        stream.discard_outliers()
+
+                    if stream.may_merge():
+                        can_merge_streams.add(stream_ix)
+                        ret.words.append(self._merge_words_of_stream(stream_ix))
+                        keep_merging = True
 
 
         flags = [True] * len(self.words)
@@ -199,12 +205,18 @@ class Stream(object):
         if self._may_merge:
             return True
 
-        if len(self.matches) == 0:
+        self._may_merge = self._may_reconstruct_by(self.matches)
+
+        return self._may_merge
+
+    def _may_reconstruct_by(self, matches):
+
+        if len(matches) == 0:
             return False
 
         counter = [0] * len(self._stream)
 
-        for match in self.matches:
+        for match in matches:
             for ix in xrange(match.start, match.end):
                 counter[ix] += 1
 
@@ -217,9 +229,58 @@ class Stream(object):
                 ret = False
                 break
 
-        self._may_merge = ret
-
         return ret
+
+    def discard_outliers(self):
+        """Try to discard words that would not fit to a horizontal line.
+
+        Returns:
+            A bool.
+
+        """
+
+        num_matches = len(self.matches)
+
+        if num_matches < 3:
+            return False
+
+        centroids = map(
+            lambda m: Point(m.data['x'] + m.data['w'] / 2,
+                            m.data['y'] + m.data['h'] / 2),
+            self.matches
+        )
+
+        best_horizontal = float('inf')
+        best_matches = None
+
+        # enumerate all possible matches
+        for num_pick in xrange(2, num_matches):
+            for indices in permutations(xrange(num_matches), num_pick):
+                if sorted(indices) != list(indices):
+                    continue
+
+                match_set = map(lambda ix: self.matches[ix], indices)
+                if not self._may_reconstruct_by(match_set):
+                    continue
+
+                # simple linear regression
+                points = map(lambda ix: centroids[ix], indices)
+                m = Point(sum(map(lambda c: c.x, points)) / num_pick,
+                          sum(map(lambda c: c.y, points)) / num_pick)
+                b = sum(map(lambda c: (c.x - m.x) * (c.y - m.y), points))
+                b /= sum(map(lambda c: (c.x - m.x) ** 2, points))
+                a = abs(m.y - b * m.x)
+
+                if a < best_horizontal:
+                    best_horizontal = a
+                    best_matches = indices
+
+        if best_matches is None:
+            return False
+
+        self.matches = map(lambda i: self.matches[i], best_matches)
+
+        return True
 
 
 class Match(object):
