@@ -59,7 +59,6 @@ class RawTextPreprocessor(object):
                 self.words[word_ix].matches
             )
 
-
             for stream_ix in xrange(len(self.raw_streams)):
                 if stream_ix == raw_stream_ix:
                     continue
@@ -69,12 +68,9 @@ class RawTextPreprocessor(object):
                     self.raw_streams[stream_ix].matches
                 )
 
-        first_word = self.words[word_indices[0]]
-        union = Rectangle(first_word['x'], first_word['y'],
-                          first_word['w'], first_word['h'])
+        union = self.words[word_indices[0]].rectangle
         for word_ix in word_indices:
-            word = self.words[word_ix]
-            union |= Rectangle(word['x'], word['y'], word['w'], word['h'])
+            union |= self.words[word_ix].rectangle
 
         return {
             'x': union.x, 'y': union.y,
@@ -132,6 +128,12 @@ class Word(object):
     def __getitem__(self, attr):
 
         return self._word_obj[attr]
+
+    @property
+    def rectangle(self):
+        """A Rectangle instance of bounding box."""
+
+        return Rectangle(self['x'], self['y'], self['w'], self['h'])
 
 
 class Stream(object):
