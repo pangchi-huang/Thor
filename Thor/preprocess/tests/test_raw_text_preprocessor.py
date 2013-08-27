@@ -146,7 +146,7 @@ with given.a_RawTextPreprocessor:
                     the(raw_stream.may_merge()).should.be(result)
 
                 for ix in may_merge_streams:
-                    preprocessor._merge(ix)
+                    preprocessor._merge_words_of_stream(ix)
 
         with and_.the_words_cannot_match_other_raw_stream_anymore:
 

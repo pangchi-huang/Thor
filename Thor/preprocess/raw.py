@@ -18,6 +18,10 @@ class RawTextPreprocessorException(Exception): pass
 class RawTextPreprocessor(object):
     """Preprocessor which helps to reconstruct words to line segment.
 
+    The preprocessor extracts raw content stream from pdf and
+    reconstructs words to line segment by taking advantage of raw
+    content stream.
+
     Attributes:
         page: A PDFPage instance.
         raw_streams: A list of Stream instance.
@@ -46,7 +50,7 @@ class RawTextPreprocessor(object):
                     stream_match = Match(word_ix, word, start, end)
                     stream.matches.append(stream_match)
 
-    def _merge(self, raw_stream_ix):
+    def _merge_words_of_stream(self, raw_stream_ix):
 
         raw_stream = self.raw_streams[raw_stream_ix]
         if not raw_stream.may_merge():
@@ -79,7 +83,15 @@ class RawTextPreprocessor(object):
         }
 
     def run(self):
-        """TODO"""
+        """Main function.
+
+        Merging words by taking advantage of raw stream content.
+        Reducing number of words of a PDFPage.
+
+        Returns:
+            A PDFPage instance.
+
+        """
 
         ret = PDFPage(page_num=self.page.page_num,
                       width=self.page.width,
@@ -87,26 +99,24 @@ class RawTextPreprocessor(object):
                       words=[])
 
         can_merge_streams = set()
-        while True:
+        keep_merging = True
+        while keep_merging:
             keep_merging = False
             for stream_ix, stream in enumerate(self.raw_streams):
-                if stream.may_merge() and stream_ix not in can_merge_streams:
+                if stream_ix not in can_merge_streams and stream.may_merge():
                     can_merge_streams.add(stream_ix)
-                    ret.words.append(self._merge(stream_ix))
+                    ret.words.append(self._merge_words_of_stream(stream_ix))
                     keep_merging = True
 
-            if not keep_merging:
-                break
 
-
-        word_flags = [True] * len(self.words)
+        flags = [True] * len(self.words)
         for stream_ix in can_merge_streams:
             stream = self.raw_streams[stream_ix]
             for match in stream.matches:
-                word_flags[match.index] = False
+                flags[match.index] = False
 
         for word_ix, word in enumerate(self.words):
-            if word_flags[word_ix]:
+            if flags[word_ix]:
                 ret.words.append(word._word_obj)
 
         return ret
@@ -117,6 +127,7 @@ class Word(object):
 
     Attributes:
         matches: A list of Match instances.
+        rectangle: A Rectangle instance of the word's bounding box.
 
     """
 
@@ -131,7 +142,7 @@ class Word(object):
 
     @property
     def rectangle(self):
-        """A Rectangle instance of bounding box."""
+        """A Rectangle instance of the word's bounding box."""
 
         return Rectangle(self['x'], self['y'], self['w'], self['h'])
 
