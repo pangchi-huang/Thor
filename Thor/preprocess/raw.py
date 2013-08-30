@@ -107,6 +107,7 @@ class RawTextPreprocessor(object):
             for stream_ix, stream in enumerate(self.raw_streams):
                 if stream_ix not in can_merge_streams:
                     if not stream.may_merge():
+                        num_matches = len(stream.matches)
                         stream.discard_outliers()
 
                     if stream.may_merge():
@@ -161,6 +162,8 @@ class Stream(object):
 
     """
 
+    discard_cache = {}
+
     def __init__(self, stream):
 
         self._stream = stream
@@ -182,6 +185,8 @@ class Stream(object):
         start_pos, stream_size = 0, len(self._stream)
 
         while start_pos < stream_size:
+            if word['t'] is None:
+                print word.__dict__
             ix = self._stream.find(word['t'], start_pos)
             if ix == -1:
                 break
@@ -239,9 +244,16 @@ class Stream(object):
 
         """
 
+        cache_key = '[%s][%s]' % \
+                    (self._stream,
+                     ','.join(map(lambda m: str(m.index), self.matches)))
+        if cache_key in Stream.discard_cache:
+            return Stream.discard_cache[cache_key]
+
         num_matches = len(self.matches)
 
         if num_matches < 3:
+            Stream.discard_cache[cache_key] = False
             return False
 
         centroids = map(
@@ -253,34 +265,78 @@ class Stream(object):
         best_horizontal = float('inf')
         best_matches = None
 
-        # enumerate all possible matches
-        for num_pick in xrange(2, num_matches):
-            for indices in permutations(xrange(num_matches), num_pick):
-                if sorted(indices) != list(indices):
-                    continue
+        for match_indices in self._enumerate_word_combinations():
+            if len(match_indices) <= 1:
+                continue
 
-                match_set = map(lambda ix: self.matches[ix], indices)
-                if not self._may_reconstruct_by(match_set):
-                    continue
+            if self._has_duplicate_word(match_indices):
+                continue
 
-                # simple linear regression
-                points = map(lambda ix: centroids[ix], indices)
-                m = Point(sum(map(lambda c: c.x, points)) / num_pick,
-                          sum(map(lambda c: c.y, points)) / num_pick)
-                b = sum(map(lambda c: (c.x - m.x) * (c.y - m.y), points))
-                b /= sum(map(lambda c: (c.x - m.x) ** 2, points))
-                a = abs(m.y - b * m.x)
+            match_set = map(lambda ix: self.matches[ix], match_indices)
 
-                if a < best_horizontal:
-                    best_horizontal = a
-                    best_matches = indices
+            # simple linear regression
+            points = map(lambda ix: centroids[ix], match_indices)
+            a, b = _get_linear_regression_params(points)
+
+            if abs(a) < best_horizontal:
+                best_horizontal = a
+                best_matches = match_indices
 
         if best_matches is None:
+            Stream.discard_cache[cache_key] = False
             return False
 
         self.matches = map(lambda i: self.matches[i], best_matches)
+        Stream.discard_cache[cache_key] = True
 
         return True
+
+    def _enumerate_word_combinations(self):
+
+        ret = []
+        self._target_mask = map(lambda ch: 0 if ch == ' ' else 1, self._stream)
+
+        for match_ix in xrange(len(self.matches)):
+            mask = [0] * len(self._target_mask)
+            match = self.matches[match_ix]
+            for i in xrange(match.start, match.end):
+                mask[i] = 1
+
+            self._recursive_find_combination([match_ix], mask,
+                                             match_ix + 1, ret)
+
+        return ret
+
+    def _recursive_find_combination(self, curr_match_ixs, curr_mask,
+                                    next_match_ix, result):
+
+        if self._target_mask == curr_mask:
+            result.append(curr_match_ixs)
+            return
+
+        for match_ix in xrange(next_match_ix, len(self.matches)):
+            maybe_match = self.matches[match_ix]
+            mask = curr_mask[:]
+            maybe = True
+
+            for i in xrange(maybe_match.start, maybe_match.end):
+                if mask[i] != 0:
+                    maybe = False
+                    break
+
+                mask[i] = 1
+
+            if maybe:
+                self._recursive_find_combination(
+                    curr_match_ixs[:] + [match_ix],
+                    mask, match_ix + 1, result
+                )
+
+    def _has_duplicate_word(self, match_indices):
+
+        word_indices = map(lambda i: self.matches[i].index, match_indices)
+        word_set = {wix: True for wix in word_indices}
+        return len(word_set) != len(match_indices)
 
 
 class Match(object):
@@ -292,3 +348,22 @@ class Match(object):
         self.data = data
         self.start = start
         self.end = end
+
+
+def _get_linear_regression_params(points):
+
+    num_points = len(points)
+    mean = Point(
+        sum(map(lambda c: c.x, points)) / num_points,
+        sum(map(lambda c: c.y, points)) / num_points
+    )
+
+    denominator = sum(map(lambda c: (c.x - mean.x) ** 2, points))
+    if denominator == 0:
+        return float('inf'), None
+
+    b = sum(map(lambda c: (c.x - mean.x) * (c.y - mean.y), points)) / \
+        denominator
+    a = mean.y - b * mean.x
+
+    return a, b
