@@ -181,8 +181,10 @@ class PDFPage(object):
         """
 
         with closing(NamedTemporaryFile()) as f:
-            cmd = ('pdftotext', '-raw', filename, f.name)
-            subprocess.check_call(cmd)
+            subprocess.check_call((
+                'pdftotext', '-f', str(page_num), '-l', str(page_num),
+                '-raw', filename, f.name
+            ))
             ret = f.read()
 
         return ret.decode('utf8').splitlines()
@@ -218,7 +220,7 @@ def _parse_word_bboxes(html):
                 'y': min_y,
                 'w': max_x - min_x,
                 'h': max_y - min_y,
-                't': word.text,
+                't': word.text or ' ',
             })
 
         pages.append(page_obj)
