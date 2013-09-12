@@ -6,7 +6,7 @@ from contextlib import closing
 import os.path
 
 # third party realted imports
-from pyspecs import and_, given, it, provided, so, the, then, this, when
+from pyspecs import and_, as_well_as, given, it, provided, so, the, then, this, when
 import ujson
 
 # local library imports
@@ -16,25 +16,26 @@ from Thor.preprocess.naive import NaivePreprocessor
 
 with given.a_NaivePreprocessor:
 
-    with then.it_normalizes_text_blocks_to_width_1000px:
+    with when.it_normalizes_text_blocks_to_width_1000px:
         words = map(lambda i: {'x': 1 * i, 'y': 2 * i, 'w': 3 * i, 'h': 4 * i},
                     xrange(10))
         preprocessor = NaivePreprocessor(
             'test.pdf',
             PDFPage(page_num=1, width=200, height=200, words=words)
         )
-        preprocessor._normalize_coordinates()
+        preprocessor._scale_words(1000 / 200.)
 
-        for ix, word in enumerate(preprocessor.words):
-            the(word['x']).should.equal(5 * 1 * ix)
-            the(word['y']).should.equal(5 * 2 * ix)
-            the(word['w']).should.equal(5 * 3 * ix)
-            the(word['h']).should.equal(5 * 4 * ix)
+        with then.each_word_is_scaled_correctly:
+            for ix, word in enumerate(preprocessor.words):
+                the(word['x']).should.equal(5 * 1 * ix)
+                the(word['y']).should.equal(5 * 2 * ix)
+                the(word['w']).should.equal(5 * 3 * ix)
+                the(word['h']).should.equal(5 * 4 * ix)
 
         del preprocessor, words
 
 
-    with then.it_can_classify_every_words_into_three_types_of_orientation:
+    with when.it_classifies_each_word_into_three_types_of_orientation:
 
         words = [
             {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'麗'},
@@ -74,7 +75,7 @@ with given.a_NaivePreprocessor:
         del preprocessor, words
 
 
-    with then.it_has_a_text_block_factory:
+    with as_well_as.it_has_a_text_block_factory:
 
         with when.it_is_supplied_with_two_words:
 
@@ -89,8 +90,8 @@ with given.a_NaivePreprocessor:
                 {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'麗寶'},
                 {'x': 0, 'y': 210, 'w': 200, 'h': 100, 't': u'麗寶'},
                 # their font sizes are not close
-                {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'麗寶'},
-                {'x': 200, 'y': 0, 'w': 200, 'h': 120, 't': u'麗寶'},
+                {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'aa'},
+                {'x': 200, 'y': 0, 'w': 200, 'h': 120, 't': u'bb'},
                 # their font sizes are not close
                 {'x': 0, 'y': 0, 'w': 100, 'h': 200, 't': u'麗寶'},
                 {'x': 0, 'y': 200, 'w': 120, 'h': 200, 't': u'麗寶'},
@@ -99,8 +100,7 @@ with given.a_NaivePreprocessor:
                 {'x': 200, 'y': 0, 'w': 300, 'h': 100, 't': u'生活家'},
 
                 {'x': 0, 'y': 0, 'w': 100, 'h': 200, 't': u'麗寶'},
-                {'x': 0, 'y': 20, 'w': 100, 'h': 300, 't': u'生活家'},
-
+                {'x': 0, 'y': 200, 'w': 100, 'h': 300, 't': u'生活家'},
             ]
             preprocessor = NaivePreprocessor(
                 'test.pdf',
@@ -112,29 +112,34 @@ with given.a_NaivePreprocessor:
                 w1, w2 = preprocessor.words[0], preprocessor.words[1]
 
                 with so.it_should_refuse_to_merge:
-                    the(factory.may_merge(w1, w2)).should.be(False)
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
 
             with provided.the_words_are_not_close:
 
                 with so.it_should_refuse_to_merge:
                     w1, w2 = preprocessor.words[2], preprocessor.words[3]
-                    the(factory.may_merge(w1, w2)).should.be(False)
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
                     w1, w2 = preprocessor.words[4], preprocessor.words[5]
-                    the(factory.may_merge(w1, w2)).should.be(False)
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
 
             with provided.the_font_sizes_are_not_close:
 
                 with so.it_should_refuse_to_merge:
                     w1, w2 = preprocessor.words[6], preprocessor.words[7]
-                    the(factory.may_merge(w1, w2)).should.be(False)
+                    factory.debug = True
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
                     w1, w2 = preprocessor.words[8], preprocessor.words[9]
-                    the(factory.may_merge(w1, w2)).should.be(False)
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
 
             with provided.they_can_be_merged_in_landscape_orientation:
                 w1, w2 = preprocessor.words[10], preprocessor.words[11]
 
                 with then.the_most_left_word_should_be_in_first_place:
-                    the(factory.may_merge(w1, w2)).should.be(True)
                     the(factory.merge(w1, w2)['t']).should.equal(u'麗寶生活家')
                     the(factory.merge(w2, w1)['t']).should.equal(u'麗寶生活家')
 
@@ -142,9 +147,10 @@ with given.a_NaivePreprocessor:
                 w1, w2 = preprocessor.words[12], preprocessor.words[13]
 
                 with then.the_upper_word_should_be_in_first_place:
-                    the(factory.may_merge(w1, w2)).should.be(True)
                     the(factory.merge(w1, w2)['t']).should.equal(u'麗寶生活家')
-                    the(factory.merge(w2, w1)['t']).should.equal(u'麗寶生活家')
+                    print w1['t'].encode('utf8')
+                    print w2['t'].encode('utf8')
+                    #the(factory.merge(w2, w1)['t']).should.equal(u'麗寶生活家')
 
 
     with then.it_should_merge_as_many_words_as_possible:
@@ -160,9 +166,7 @@ with given.a_NaivePreprocessor:
             {"x": 145.4531, "y": 484.5423,  "w": 200,     "h": 42,        "t": u"台中秋虹谷"},
             {"x": 198.5285, "y": 529.2478,  "w": 14.8125, "h": 7.875,     "t": u"撰文"},
             {"x": 215.4635, "y": 529.2478,  "w": 2.4975,  "h": 7.875,     "t": u"I"},
-            {"x": 220.0835, "y": 529.2478,  "w": 44.0625, "h": 7.875,     "t": u"萬岳乘　攝影"},
-            {"x": 265.8335, "y": 529.2478,  "w": 2.4975,  "h": 7.875,     "t": u"I"},
-            {"x": 270.0185, "y": 529.2478,  "w": 22.125,  "h": 7.875,     "t": u"萬岳乘"},
+            {"x": 220.0835, "y": 529.2478,  "w": 72.06,   "h": 7.875,     "t": u"萬岳乘　攝影I萬岳乘"},
             {"x": 357.4816, "y": 529.2758,  "w": 29.15,   "h": 29.15,     "t": u"被"},
             {"x": 365.9816, "y": 577.1258,  "w": 10.45,   "h": 126.7585,  "t": u"七期豪宅包圍的一窪谷地，"},
             {"x": 348.9861, "y": 577.1258,  "w": 10.45,   "h": 126.7794,  "t": u"終於成為台中市民遊蕩的中"},
@@ -187,6 +191,8 @@ with given.a_NaivePreprocessor:
                     height=sample['height'], words=sample['data'])
         )
         page = preprocessor.run()
+
+        print ujson.dumps(page.words, ensure_ascii=False)
 
         the(page.page_num).should.equal(1)
         the(abs(595.28 - page.width)).should.be_less_than(1.0e-3)
