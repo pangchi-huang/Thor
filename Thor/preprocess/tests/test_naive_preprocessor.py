@@ -3,6 +3,7 @@
 
 # standard library imports
 from contextlib import closing
+import os.path
 
 # third party realted imports
 from pyspecs import and_, given, it, provided, so, the, then, this, when
@@ -15,24 +16,11 @@ from Thor.preprocess.naive import NaivePreprocessor
 
 with given.a_NaivePreprocessor:
 
-    curr_dir = os.path.abspath(os.path.dirname(__file__))
-    sample_json = os.path.join(curr_dir, 'fixture', 'chew_people_11.json')
-    sample_pdf = os.path.join(curr_dir, 'fixture', 'chew_people_11.pdf')
-
-    with closing(open(sample_json)) as f:
-        sample = ujson.loads(f.read().decode('utf8'))
-
-    preprocessor = NaivePreprocessor(
-        sample_pdf,
-        PDFPage(page_num=sample['page'], width=sample['width'],
-                height=sample['height'], words=sample['data'])
-    )
-
     with then.it_normalizes_text_blocks_to_width_1000px:
-        words = map(lambda i: {'x': 1 * i, y: 2 * i, 'w': 3 * i, 'h': 4 * i},
+        words = map(lambda i: {'x': 1 * i, 'y': 2 * i, 'w': 3 * i, 'h': 4 * i},
                     xrange(10))
         preprocessor = NaivePreprocessor(
-            sample_pdf,
+            'test.pdf',
             PDFPage(page_num=1, width=200, height=200, words=words)
         )
         preprocessor._normalize_coordinates()
@@ -62,25 +50,25 @@ with given.a_NaivePreprocessor:
         with provided.a_word_only_has_single_character_or_equal_dimension:
             word = preprocessor.words[0]
 
-            with then.its_orientation_is_unknown:
+            with so.its_orientation_is_unknown:
                 the(word.orientation).should.equal(word.UNKNOWN)
 
         with provided.a_word_has_the_same_width_and_height:
             word = preprocessor.words[1]
 
-            with then.its_orientation_is_unknown:
+            with so.its_orientation_is_unknown:
                 the(word.orientation).should.equal(word.UNKNOWN)
 
         with provided.width_is_longer_than_height:
             word = preprocessor.words[2]
 
-            with then.its_orientation_is_landscape_type:
+            with so.its_orientation_is_landscape_type:
                 the(word.orientation).should.equal(word.LANDSCAPE)
 
         with provided.height_is_longer_than_width:
             word = preprocessor.words[3]
 
-            with then.its_orientation_is_portrait_type:
+            with so.its_orientation_is_portrait_type:
                 the(word.orientation).should.equal(word.PORTRAIT)
 
         del preprocessor, words
@@ -88,7 +76,7 @@ with given.a_NaivePreprocessor:
 
     with then.it_has_a_text_block_factory:
 
-        with.when.it_is_supplied_with_two_words:
+        with when.it_is_supplied_with_two_words:
 
             words = [
                 # one is landscape, the other is portrait
@@ -120,15 +108,15 @@ with given.a_NaivePreprocessor:
             )
             factory = preprocessor.factory
 
-            with.provided.one_is_landscape_and_the_other_is_portrait:
+            with provided.one_is_landscape_and_the_other_is_portrait:
                 w1, w2 = preprocessor.words[0], preprocessor.words[1]
 
-                with then.it_should_refuse_to_merge:
+                with so.it_should_refuse_to_merge:
                     the(factory.may_merge(w1, w2)).should.be(False)
 
             with provided.the_words_are_not_close:
 
-                with then.it_should_refuse_to_merge:
+                with so.it_should_refuse_to_merge:
                     w1, w2 = preprocessor.words[2], preprocessor.words[3]
                     the(factory.may_merge(w1, w2)).should.be(False)
                     w1, w2 = preprocessor.words[4], preprocessor.words[5]
@@ -136,7 +124,7 @@ with given.a_NaivePreprocessor:
 
             with provided.the_font_sizes_are_not_close:
 
-                with then.it_should_refuse_to_merge:
+                with so.it_should_refuse_to_merge:
                     w1, w2 = preprocessor.words[6], preprocessor.words[7]
                     the(factory.may_merge(w1, w2)).should.be(False)
                     w1, w2 = preprocessor.words[8], preprocessor.words[9]
