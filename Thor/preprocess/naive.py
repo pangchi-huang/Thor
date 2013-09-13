@@ -10,7 +10,7 @@ from Thor.utils.Point import Point
 from Thor.utils.Rectangle import Rectangle
 
 
-__all__ = []
+__all__ = ['NaivePreprocessor', 'NaivePreprocessorException']
 
 
 class NaivePreprocessorException(Exception): pass
