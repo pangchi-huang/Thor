@@ -147,7 +147,7 @@ class WordFactory(object):
 
     """
 
-    SIMILARITY = 0.984807753012208 # cos(10)
+    SIMILARITY = 0.9961946980917455 # cos(5)
 
     def __init__(self, min_dist, font_ratio):
 
@@ -256,16 +256,16 @@ class WordFactory(object):
         word_obj = {
             'x': rectangle.x, 'y': rectangle.y,
             'w': rectangle.w, 'h': rectangle.h,
-            't': None
+            't': None,
         }
 
         if word1['x'] <= word2['x']:
             word_obj['t'] = word1['t'] + word2['t']
-            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
+            #debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
             #print debug.encode('utf8')
         else:
             word_obj['t'] = word2['t'] + word1['t']
-            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
+            #debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
             #print debug.encode('utf8')
 
         return Word(word_obj)
@@ -276,16 +276,16 @@ class WordFactory(object):
         word_obj = {
             'x': rectangle.x, 'y': rectangle.y,
             'w': rectangle.w, 'h': rectangle.h,
-            't': None
+            't': None,
         }
 
         if word1['y'] <= word2['y']:
             word_obj['t'] = word1['t'] + word2['t']
-            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
+            #debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
             #print debug.encode('utf8')
         else:
             word_obj['t'] = word2['t'] + word1['t']
-            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
+            #debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
             #print debug.encode('utf8')
 
         return Word(word_obj)
@@ -295,7 +295,7 @@ class WordFactory(object):
         rectangle = word1.rectangle | word2.rectangle
         word = Word({
             'x': rectangle.x, 'y': rectangle.y,
-            'w': rectangle.w, 'h': rectangle.h, 't': None
+            'w': rectangle.w, 'h': rectangle.h, 't': None,
         })
 
         if word.orientation == Word.PORTRAIT:
