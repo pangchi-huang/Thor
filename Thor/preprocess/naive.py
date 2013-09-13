@@ -122,7 +122,9 @@ class Word(object):
         if self._orientation is not None:
             return self._orientation
 
-        if len(self['t']) > 1:
+        if self['t'] is None:
+            self._orientation = self.UNKNOWN
+        elif len(self['t']) > 1:
             if self['w'] == self['h']:
                 self._orientation = self.UNKNOWN
             elif self['w'] > self['h']:
@@ -144,6 +146,8 @@ class WordFactory(object):
         inv_font_ratio: Just 1.0 / font_ratio.
 
     """
+
+    SIMILARITY = 0.984807753012208 # cos(10)
 
     def __init__(self, min_dist, font_ratio):
 
@@ -169,16 +173,17 @@ class WordFactory(object):
         o1, o2 = word1.orientation, word2.orientation
         rect1, rect2 = word1.rectangle, word2.rectangle
         dx, dy = rect1.x_norm(rect2), rect1.y_norm(rect2)
+        c1 = Point(rect1.x + rect1.w / 2.0, rect1.y + rect1.h / 2.0)
+        c2 = Point(rect2.x + rect2.w / 2.0, rect2.y + rect2.h / 2.0)
         w1, w2 = rect1.w, rect2.w
         h1, h2 = rect1.h, rect2.h
+        pargs = (o1, o2, dx, dy, c1, c2, w1, w2)
+        largs = (o1, o2, dx, dy, c1, c2, h1, h2)
+
 
         if o1 == Word.UNKNOWN and o2 == Word.UNKNOWN:
-            may_portrait_merge = self._may_merge_in_portrait_direction(
-                o1, o2, dx, dy, w1, w2
-            )
-            may_landscape_merge = self._may_merge_in_landscape_direction(
-                o1, o2, dx, dy, h1, h2
-            )
+            may_portrait_merge = self._may_merge_in_portrait_direction(*pargs)
+            may_landscape_merge = self._may_merge_in_landscape_direction(*largs)
 
             if may_portrait_merge and may_landscape_merge:
                 return self._naive_merge(word1, word2)
@@ -190,11 +195,11 @@ class WordFactory(object):
             return None
 
         if o1 == Word.PORTRAIT or o2 == Word.PORTRAIT:
-            if self._may_merge_in_portrait_direction(o1, o2, dx, dy, w1, w2):
+            if self._may_merge_in_portrait_direction(*pargs):
                 return self._merge_in_portrait_direction(word1, word2)
 
         if o1 == Word.LANDSCAPE or o2 == Word.LANDSCAPE:
-            if self._may_merge_in_landscape_direction(o1, o2, dx, dy, h1, h2):
+            if self._may_merge_in_landscape_direction(*largs):
                 return self._merge_in_landscape_direction(word1, word2)
 
         return None
@@ -202,12 +207,18 @@ class WordFactory(object):
     def _may_merge_in_landscape_direction(self,
                                           orientation1, orientation2,
                                           dx, dy,
+                                          center1, center2,
                                           font_size1, font_size2):
 
         if orientation1 == Word.PORTRAIT or orientation2 == Word.PORTRAIT:
             return False
 
         if dx > self.min_dist or dy != 0:
+            return False
+
+        v = center1 - center2
+        cos = abs(v.x) / (v.x * v.x + v.y * v.y) ** 0.5
+        if cos < self.SIMILARITY:
             return False
 
         ratio = 1.0 * font_size1 / font_size2
@@ -219,12 +230,18 @@ class WordFactory(object):
     def _may_merge_in_portrait_direction(self,
                                          orientation1, orientation2,
                                          dx, dy,
+                                         center1, center2,
                                          font_size1, font_size2):
 
         if orientation1 == Word.LANDSCAPE or orientation2 == Word.LANDSCAPE:
             return False
 
         if dy > self.min_dist or dx != 0:
+            return False
+
+        v = center1 - center2
+        cos = abs(v.y) / (v.x * v.x + v.y * v.y) ** 0.5
+        if cos < self.SIMILARITY:
             return False
 
         ratio = 1.0 * font_size1 / font_size2
@@ -244,8 +261,12 @@ class WordFactory(object):
 
         if word1['x'] <= word2['x']:
             word_obj['t'] = word1['t'] + word2['t']
+            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
+            #print debug.encode('utf8')
         else:
             word_obj['t'] = word2['t'] + word1['t']
+            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
+            #print debug.encode('utf8')
 
         return Word(word_obj)
 
@@ -260,8 +281,12 @@ class WordFactory(object):
 
         if word1['y'] <= word2['y']:
             word_obj['t'] = word1['t'] + word2['t']
+            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word1['t'], word2['t'])
+            #print debug.encode('utf8')
         else:
             word_obj['t'] = word2['t'] + word1['t']
+            debug = u'"{0}" + "{1}" --> "{0}{1}"'.format(word2['t'], word1['t'])
+            #print debug.encode('utf8')
 
         return Word(word_obj)
 
@@ -274,6 +299,6 @@ class WordFactory(object):
         })
 
         if word.orientation == Word.PORTRAIT:
-            return _merge_in_portrait_direction(word1, word2)
+            return self._merge_in_portrait_direction(word1, word2)
 
-        return _merge_in_landscape_direction(word1, word2)
+        return self._merge_in_landscape_direction(word1, word2)

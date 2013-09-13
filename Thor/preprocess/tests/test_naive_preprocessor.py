@@ -90,8 +90,8 @@ with given.a_NaivePreprocessor:
                 {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'麗寶'},
                 {'x': 0, 'y': 210, 'w': 200, 'h': 100, 't': u'麗寶'},
                 # their font sizes are not close
-                {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'aa'},
-                {'x': 200, 'y': 0, 'w': 200, 'h': 120, 't': u'bb'},
+                {'x': 0, 'y': 0, 'w': 200, 'h': 100, 't': u'麗寶'},
+                {'x': 200, 'y': 0, 'w': 200, 'h': 120, 't': u'麗寶'},
                 # their font sizes are not close
                 {'x': 0, 'y': 0, 'w': 100, 'h': 200, 't': u'麗寶'},
                 {'x': 0, 'y': 200, 'w': 120, 'h': 200, 't': u'麗寶'},
@@ -101,6 +101,12 @@ with given.a_NaivePreprocessor:
 
                 {'x': 0, 'y': 0, 'w': 100, 'h': 200, 't': u'麗寶'},
                 {'x': 0, 'y': 200, 'w': 100, 'h': 300, 't': u'生活家'},
+                # they cannot connect to a horizontal line
+                {'x': 404.7478, 'y': 228.517658, 'w': 137.174383, 'h': 35.92068, 't': u'麗寶'},
+                {'x': 386.265880, 'y': 255.435498, 'w': 155.860396, 'h': 35.92068, 't': u'麗寶'},
+                # they cannot connect to a vertical line
+                {'x': 87.112183, 'y': 290.500072, 'w': 15.785401, 'h': 43.518811, 't': u'麗寶'},
+                {'x': 73.697287, 'y': 315.212643, 'w': 15.94485, 'h': 72.400248, 't': u'麗寶'},
             ]
             preprocessor = NaivePreprocessor(
                 'test.pdf',
@@ -132,6 +138,20 @@ with given.a_NaivePreprocessor:
                     the(factory.merge(w1, w2)).should.be(None)
                     the(factory.merge(w2, w1)).should.be(None)
                     w1, w2 = preprocessor.words[8], preprocessor.words[9]
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
+
+            with provided.word_centroids_cannot_connect_to_a_horizontal_line:
+
+                with so.it_should_refuse_to_merge:
+                    w1, w2 = preprocessor.words[14], preprocessor.words[15]
+                    the(factory.merge(w1, w2)).should.be(None)
+                    the(factory.merge(w2, w1)).should.be(None)
+
+            with provided.word_centroids_cannot_connect_to_a_vertical_line:
+
+                with so.it_should_refuse_to_merge:
+                    w1, w2 = preprocessor.words[16], preprocessor.words[17]
                     the(factory.merge(w1, w2)).should.be(None)
                     the(factory.merge(w2, w1)).should.be(None)
 
