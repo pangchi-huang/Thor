@@ -129,7 +129,6 @@ with given.a_NaivePreprocessor:
 
                 with so.it_should_refuse_to_merge:
                     w1, w2 = preprocessor.words[6], preprocessor.words[7]
-                    factory.debug = True
                     the(factory.merge(w1, w2)).should.be(None)
                     the(factory.merge(w2, w1)).should.be(None)
                     w1, w2 = preprocessor.words[8], preprocessor.words[9]
@@ -148,9 +147,7 @@ with given.a_NaivePreprocessor:
 
                 with then.the_upper_word_should_be_in_first_place:
                     the(factory.merge(w1, w2)['t']).should.equal(u'麗寶生活家')
-                    print w1['t'].encode('utf8')
-                    print w2['t'].encode('utf8')
-                    #the(factory.merge(w2, w1)['t']).should.equal(u'麗寶生活家')
+                    the(factory.merge(w2, w1)['t']).should.equal(u'麗寶生活家')
 
 
     with then.it_should_merge_as_many_words_as_possible:

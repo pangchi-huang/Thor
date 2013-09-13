@@ -258,7 +258,7 @@ class WordFactory(object):
             't': None
         }
 
-        if word1['x'] <= word2['x']:
+        if word1['y'] <= word2['y']:
             word_obj['t'] = word1['t'] + word2['t']
         else:
             word_obj['t'] = word2['t'] + word1['t']
