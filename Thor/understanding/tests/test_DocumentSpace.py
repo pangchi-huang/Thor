@@ -3,6 +3,7 @@
 
 # standard library imports
 from contextlib import closing
+from itertools import product
 import os.path
 
 # third party realted imports
@@ -75,7 +76,7 @@ with given.a_DocumentSpace:
         ])
         ds = DocumentSpace(words)
 
-        with and_.it_can_enumerate_all_possible_y_cuts:
+        with and_.it_can_enumerate_all_possible_y_cuts_as_well:
             y_cuts = ds.enumerate_horizontal_cuts()
             the(y_cuts[0]).should.equal(Rectangle(0, 10, 100, 15))
             the(y_cuts[1]).should.equal(Rectangle(0, 35, 100, 165))
@@ -92,3 +93,36 @@ with given.a_DocumentSpace:
                 the(words[1] in ds.subspaces[1]).should.be(False)
                 the(words[2] in ds.subspaces[0]).should.be(False)
                 the(words[2] in ds.subspaces[1]).should.be(True)
+
+
+    with when.segmenting_words:
+
+        words = map(lambda (i, j): TextRectangle(i * 30, j * 30, 10, 10, ''),
+                    product(xrange(3), repeat=2))
+        ds = DocumentSpace(words)
+
+        with provided.we_want_it_segment_words_horizontally:
+            word_clusters = ds.segment_words_horizontally()
+
+            with then.it_should_cluster_correctly:
+                the(len(word_clusters)).should.equal(3)
+                for i in xrange(3):
+                    cluster = word_clusters[i]
+                    the(len(cluster)).should.equal(3)
+                    for j, w in enumerate(cluster):
+                        the(w).should.equal(
+                            TextRectangle(j * 30, i * 30, 10, 10, '')
+                        )
+
+        with provided.we_want_it_segment_words_vertically:
+            word_clusters = ds.segment_words_vertically()
+
+            with then.it_should_cluster_correctly:
+                the(len(word_clusters)).should.equal(3)
+                for i in xrange(3):
+                    cluster = word_clusters[i]
+                    the(len(cluster)).should.equal(3)
+                    for j, w in enumerate(cluster):
+                        the(w).should.equal(
+                            TextRectangle((2 - i) * 30, j * 30, 10, 10, '')
+                        )

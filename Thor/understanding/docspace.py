@@ -177,3 +177,46 @@ class DocumentSpace(object):
             self.subspaces = (DocumentSpace(up), DocumentSpace(down))
         else:
             self.subspaces = (DocumentSpace(down), DocumentSpace(up))
+
+    def segment_words_horizontally(self, min_size=0):
+
+        cuts = self.enumerate_horizontal_cuts(min_size)
+
+        if len(cuts) == 0:
+            return self.words
+
+        ret = []
+        cuts = [0] + map(lambda c: c.y, cuts) + [float('inf')]
+        for i in xrange(len(cuts) - 1):
+            y1, y2 = cuts[i], cuts[i + 1]
+            cluster = []
+
+            for word in self.words:
+                if y1 <= word.y and word.y + word.h <= y2:
+                    cluster.append(word)
+
+            ret.append(cluster)
+
+        return ret
+
+    def segment_words_vertically(self, min_size=0):
+
+        cuts = self.enumerate_vertical_cuts(min_size)
+
+        if len(cuts) == 0:
+            return self.words
+
+        ret = []
+        cuts = [0] + map(lambda c: c.x, cuts) + [float('inf')]
+        cuts.reverse()
+        for i in xrange(len(cuts) - 1):
+            x1, x2 = cuts[i], cuts[i + 1]
+            cluster = []
+
+            for word in self.words:
+                if x2 <= word.x and word.x + word.w <= x1:
+                    cluster.append(word)
+
+            ret.append(cluster)
+
+        return ret
