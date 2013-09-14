@@ -271,8 +271,8 @@ class TextRectangle(Rectangle):
     def __repr__(self):
         """Get the string representation of this object."""
 
-        return "TextRectangle(x={x}, y={y}, w={w}, h={h}, t={t})".\
-               format(self.__dict__)
+        return "TextRectangle(x=%s, y=%s, w=%s, h=%s, t=%s)" % \
+               (self._x, self._y, self._w, self._h, self._t)
 
     def __eq__(self, other):
         """Implements == operator."""
