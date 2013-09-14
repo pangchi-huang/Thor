@@ -7,11 +7,12 @@ from pyspecs import and_, as_well_as, given, it, provided, so, the, then, this, 
 
 # local library imports
 from Thor.understanding.stat import WordStatistician
+from Thor.utils.Rectangle import TextRectangle
 
 
 with given.a_WordStatistician_and_supply_it_with_some_words:
 
-    words = map(lambda i: {'x': 1. * i, 'y': 2. * i, 'w': 3. * i, 'h': 4. * i},
+    words = map(lambda i: TextRectangle(x=1.*i, y=2.*i, w=3.*i, h=4.* i, t=u''),
                 xrange(10))
     ws = WordStatistician(words)
 

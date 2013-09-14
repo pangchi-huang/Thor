@@ -29,10 +29,10 @@ class WordStatistician(object):
         self.count = len(words)
 
         for ix, word in enumerate(words):
-            self.avg_width += 1.0 * word['w']
-            self.var_width += 1.0 * word['w'] * word['w']
-            self.avg_height += 1.0 * word['h']
-            self.var_height += 1.0 * word['h'] * word['h']
+            self.avg_width += 1.0 * word.w
+            self.var_width += 1.0 * word.w * word.w
+            self.avg_height += 1.0 * word.h
+            self.var_height += 1.0 * word.h * word.h
 
         self.avg_width /= self.count
         self.var_width -= self.count * self.avg_width * self.avg_width
