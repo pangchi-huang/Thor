@@ -41,11 +41,22 @@ class DocumentSpace(object):
         self.word_stat = WordStatistician(words)
 
     def __contains__(self, word):
+        """Implements member test of TextRectangle."""
 
         return word in self.words
 
     @property
     def reading_direction(self):
+        """Get reading direction of words inside this space.
+
+        Returns:
+            Either LEFT_TO_RIGHT or TOP_TO_BOTTOM.
+
+        Raises:
+            DocumentSpaceException: An error occurred if there is no
+            word inside.
+
+        """
 
         if self._reading_direction is not None:
             return self._reading_direction
@@ -62,7 +73,8 @@ class DocumentSpace(object):
             else:
                 self._reading_direction = self.TOP_TO_BOTTOM
 
-        elif self.word_stat.var_width > self.word_stat.var_height:
+        elif self.word_stat.horizontal_word_count > \
+             self.word_stat.vertical_word_count:
             self._reading_direction = self.LEFT_TO_RIGHT
 
         else:
@@ -71,6 +83,16 @@ class DocumentSpace(object):
         return self._reading_direction
 
     def enumerate_vertical_cuts(self, min_size=0):
+        """Enumerates all vertical cuts.
+
+        Args:
+            min_size: Minimum width of vertical cut. All enumerated
+                vertical cuts must have width greater than it.
+
+        Returns:
+            A list of Rectangle instances.
+
+        """
 
         ret = []
         world = [float('inf'), float('inf'), -float('inf'), -float('inf')]
@@ -79,12 +101,12 @@ class DocumentSpace(object):
         for word in self.words:
             if word.x < world[0]:
                 world[0] = word.x
-            elif word.x + word.w > world[2]:
+            if word.x + word.w > world[2]:
                 world[2] = word.x + word.w
 
             if word.y < world[1]:
                 world[1] = word.y
-            elif word.y + word.h > world[3]:
+            if word.y + word.h > world[3]:
                 world[3] = word.y + word.h
 
             intervals.add(Interval(word.x, word.x + word.w))
@@ -100,14 +122,37 @@ class DocumentSpace(object):
         return ret
 
     def get_widest_vertical_cut(self, min_size=0):
+        """Get the biggest vertical cut.
+
+        Args:
+            min_size: The returned vertical width must have width
+                greater than it.
+
+        Returns:
+            A Rectangle instance. If no vertical cut is available, None
+            is returned.
+
+        """
 
         cuts = self.enumerate_vertical_cuts(min_size)
         if len(cuts) == 0:
             return None
+        elif len(cuts) == 1:
+            return cuts[0]
 
         return max(*cuts, key=lambda c: c.w)
 
     def enumerate_horizontal_cuts(self, min_size=0):
+        """Enumerates all horizontal cuts.
+
+        Args:
+            min_size: Minimum height of horizontal cut. All enumerated
+                horizontal cuts must have height greater than it.
+
+        Returns:
+            A list of Rectangle instances.
+
+        """
 
         ret = []
         world = [float('inf'), float('inf'), -float('inf'), -float('inf')]
@@ -116,16 +161,19 @@ class DocumentSpace(object):
         for word in self.words:
             if word.x < world[0]:
                 world[0] = word.x
-            elif word.x + word.w > world[2]:
+            if word.x + word.w > world[2]:
                 world[2] = word.x + word.w
 
             if word.y < world[1]:
                 world[1] = word.y
-            elif word.y + word.h > world[3]:
+            if word.y + word.h > world[3]:
                 world[3] = word.y + word.h
 
+            #print word.y, word.y + word.h, word.t.encode('utf8')
             intervals.add(Interval(word.y, word.y + word.h))
-
+        #print '------------------'
+        #print [intervals[i] for i in xrange(len(intervals))]
+        #print intervals.gaps
 
         for c in intervals.gaps:
             if c.length < min_size:
@@ -134,17 +182,43 @@ class DocumentSpace(object):
             cut = Rectangle(world[0], c.begin, world[2] - world[0], c.length)
             ret.append(cut)
 
+        #print ret
+
         return ret
 
     def get_widest_horizontal_cut(self, min_size=0):
+        """Get the biggest horizontal cut.
+
+        Args:
+            min_size: The returned horizontal width must have height
+                greater than it.
+
+        Returns:
+            A Rectangle instance. If no horizontal cut is available, None
+            is returned.
+
+        """
 
         cuts = self.enumerate_horizontal_cuts(min_size)
         if len(cuts) == 0:
             return None
+        elif len(cuts) == 1:
+            return cuts[0]
 
         return max(*cuts, key=lambda c: c.h)
 
     def cut_vertically(self, cut_point, left_first=True):
+        """Cut the space vertically into 2 subspaces.
+
+        Args:
+            cut_point: The x coordinate to split.
+            left_first: If True, then left subspace will be traversed
+                first. Otherwise, the right one first.
+
+        Raises:
+            DocumentSpaceException: If any word is cut.
+
+        """
 
         left, right = [], []
 
@@ -162,6 +236,17 @@ class DocumentSpace(object):
             self.subspaces = (DocumentSpace(right), DocumentSpace(left))
 
     def cut_horizontally(self, cut_point, up_first=True):
+        """Cut the space horizontally into 2 subspaces.
+
+        Args:
+            cut_point: The y coordinate to split.
+            up_first: If True, then upper subspace will be traversed
+                first. Otherwise, the downside one first.
+
+        Raises:
+            DocumentSpaceException: If any word is cut.
+
+        """
 
         up, down = [], []
 
@@ -179,11 +264,29 @@ class DocumentSpace(object):
             self.subspaces = (DocumentSpace(down), DocumentSpace(up))
 
     def segment_words_horizontally(self, min_size=0):
+        """Segment words by y-coordinate.
+
+        Args:
+            min_size: The minimum distance between word segments.
+
+        Returns:
+            A list of word segments. A word segment is a list of
+            TextRectangle instances. For instance,
+
+            [
+                [TextRectangle, TextRectangle, ...], # Segment
+                [TextRectangle, TextRectangle, ...], # Segment
+                ...
+            ]
+
+            The returned segments will be returned from top to bottom.
+
+        """
 
         cuts = self.enumerate_horizontal_cuts(min_size)
 
         if len(cuts) == 0:
-            return self.words
+            return [self.words]
 
         ret = []
         cuts = [0] + map(lambda c: c.y, cuts) + [float('inf')]
@@ -200,11 +303,29 @@ class DocumentSpace(object):
         return ret
 
     def segment_words_vertically(self, min_size=0):
+        """Segment words by x-coordinate.
+
+        Args:
+            min_size: The minimum distance between word segments.
+
+        Returns:
+            A list of word segments. A word segment is a list of
+            TextRectangle instances. For instance,
+
+            [
+                [TextRectangle, TextRectangle, ...], # Segment
+                [TextRectangle, TextRectangle, ...], # Segment
+                ...
+            ]
+
+            The returned segments will be returned from right to left.
+
+        """
 
         cuts = self.enumerate_vertical_cuts(min_size)
 
         if len(cuts) == 0:
-            return self.words
+            return [self.words]
 
         ret = []
         cuts = [0] + map(lambda c: c.x, cuts) + [float('inf')]
