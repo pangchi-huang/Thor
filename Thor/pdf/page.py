@@ -254,8 +254,13 @@ def _filter_invisible_words(width, height, words):
     ret = []
     world_rect = Rectangle(0, 0, width, height)
     for word in words:
+        # ignore space and full space
+        if word['t'] in (' ', u'\u2003'):
+            continue
+
         rect = Rectangle(word['x'], word['y'], word['w'], word['h'])
         if rect & world_rect is not None:
             ret.append(word)
+
 
     return ret

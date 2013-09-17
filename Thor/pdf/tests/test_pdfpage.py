@@ -62,6 +62,12 @@ with given.a_pdf:
             the(pages[0].page_num).should.equal(1)
             the(pages[1].page_num).should.equal(3)
 
+        with and_.no_space_is_included:
+            pages = PDFPage.extract_texts(sample_pdf)
+            for page in pages:
+                for word in page.words:
+                    the(word['t']).should_NOT.be_in((' ', u'\u2003'))
+
         with and_.no_word_is_outside_crop_box:
             pages = PDFPage.extract_texts(sample_pdf)
             for page in pages:
