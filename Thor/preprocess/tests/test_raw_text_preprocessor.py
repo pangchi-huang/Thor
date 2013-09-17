@@ -230,3 +230,47 @@ with given.a_RawTextPreprocessor:
                     break
 
             the(found).should.be(True)
+
+
+    with when.all_words_are_aligned:
+        from Thor.preprocess.raw import Stream
+
+        ground_truth = (
+            {'h': 8.50392, 'w': 22.0923, 'x': 472.494, 'y': 129.613864, 't': u'9月16日'},
+            {'h': 8.50392, 'w': 22.0924, 'x': 395.675, 'y': 129.613864, 't': u'9月16日'},
+            {'h': 8.50392, 'w': 22.064, 'x': 318.8703, 'y': 129.613864, 't': u'9月13日'},
+            {'h': 8.50392, 'w': 22.0002, 'x': 242.0833, 'y': 129.613864, 't': u'9月12日'},
+            {'h': 8.50392, 'w': 21.2846, 'x': 165.6222, 'y': 129.613864, 't': u'9月11日'},
+            {'h': 8.50392, 'w': 21.1428, 'x': 88.8742, 'y': 129.613864, 't': u'9月11日'},
+        )
+
+        sample_json = os.path.join(curr_dir, 'fixture', 'test2.json')
+
+        with closing(open(sample_json)) as f:
+            sample = ujson.loads(f.read().decode('utf8'))
+
+        preprocessor = RawTextPreprocessor(
+            sample_pdf,
+            PDFPage(page_num=sample['page'], width=sample['width'],
+                    height=sample['height'], words=sample['data'])
+        )
+        preprocessor.raw_streams = map(Stream,
+                                       map(lambda gt: gt['t'], ground_truth))
+        preprocessor._associate_word_with_stream()
+
+        with then.it_can_perform_correctly:
+            page = preprocessor.run()
+            the(len(page.words)).should.equal(len(ground_truth))
+            for gt in ground_truth:
+                match = False
+                for word in page.words:
+                    if abs(word['x'] - gt['x']) < 1.0e-3:
+                        for attr in 'xywh':
+                            the(abs(word[attr] - gt[attr])).\
+                            should.be_less_than(1.0e-3)
+                        the(word['t']).should.equal(gt['t'])
+                        match = True
+                        break
+
+                the(match).should.be(True)
+
