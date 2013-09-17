@@ -262,7 +262,7 @@ class Stream(object):
             self.matches
         )
 
-        best_horizontal = float('inf')
+        best_cost = float('inf')
         best_matches = None
 
         for match_indices in self._enumerate_word_combinations():
@@ -272,14 +272,21 @@ class Stream(object):
             if self._has_duplicate_word(match_indices):
                 continue
 
+            # the x-positions of matched words should increase monotonically
             match_set = map(lambda ix: self.matches[ix], match_indices)
+            if  sorted(match_set, key=lambda m: m.start) != \
+                sorted(match_set, key=lambda m: m.data['x']):
+                continue
 
             # simple linear regression
             points = map(lambda ix: centroids[ix], match_indices)
             a, b = _get_linear_regression_params(points)
+            x_variance = _get_std_deviation(map(lambda p: p.x, points))
+            # just in case slope is 0
+            cost = (abs(a) + 1.0e-6) * x_variance
 
-            if abs(a) < best_horizontal:
-                best_horizontal = a
+            if cost < best_cost:
+                best_cost = cost
                 best_matches = match_indices
 
         if best_matches is None:
@@ -367,3 +374,11 @@ def _get_linear_regression_params(points):
     a = mean.y - b * mean.x
 
     return a, b
+
+
+def _get_std_deviation(data):
+
+    sorted_data = sorted(data)
+    count = len(data)
+    avg = 1. * sum(data) / count
+    return 1. * (sum((d * d for d in data)) - count * avg * avg) / count
