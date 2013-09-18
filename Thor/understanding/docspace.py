@@ -341,3 +341,61 @@ class DocumentSpace(object):
             ret.append(cluster)
 
         return ret
+
+    def extract_words(self):
+        """Extracts words inside the space."""
+
+        if len(self.words) == 1:
+            return self.words[0].t
+
+        ret = []
+        num_char = sum((len(word.t) for word in self.words))
+
+        if self.reading_direction == self.LEFT_TO_RIGHT:
+            avg_char_size = 1.0 * sum((word.w for word in self.words)) / num_char
+            segments = self.segment_words_horizontally()
+            map(lambda segment: segment.sort(key=lambda word: word.x), segments)
+            median_x = _median(map(lambda segment: segment[0].x, segments))
+
+            for segment in segments:
+                paragraph = ''.join((word.t for word in segment))
+                if segment[0].x > median_x + avg_char_size * 0.75:
+                    ret.append('\n' + paragraph)
+                else:
+                    ret.append(paragraph)
+
+        else:
+            avg_char_size = 1.0 * sum((word.h for word in self.words)) / num_char
+            segments = self.segment_words_vertically()
+            map(lambda segment: segment.sort(key=lambda word: word.y), segments)
+            median_y = _median(map(lambda segment: segment[0].y, segments))
+            #print 'avg_char_size:', avg_char_size
+            #print 'median_y:', median_y
+
+            for segment in segments:
+                print [word.y for word in segment]
+                paragraph = ''.join((word.t for word in segment))
+                if segment[0].y > median_y + avg_char_size * 0.75:
+                    ret.append('\n' + paragraph)
+                else:
+                    ret.append(paragraph)
+
+        return ''.join(ret)
+
+    def traverse(self, ret=None):
+
+        if self.subspaces is None or len(self.subspaces) == 0:
+            ret.append(self.extract_words())
+            return
+
+        for subspace in self.subspaces:
+            subspace.traverse(ret)
+
+
+def _median(sorted_data):
+
+    half = len(sorted_data) / 2
+    if len(sorted_data) % 2 == 0:
+        return sum(sorted_data[half - 1:half + 1]) / 2.0
+    else:
+        return sorted_data[half]
