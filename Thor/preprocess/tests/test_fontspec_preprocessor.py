@@ -37,12 +37,11 @@ with given.a_FontSpecPreprocessor:
             FontSpec(size=38, color="221714"),
             FontSpec(size=27, color="221714"),
             FontSpec(size=8, color="221714"),
-            FontSpec(size=4, color="000000")
+            FontSpec(size=4, color="000000"),
         ]
         ground_truths.sort(key=lambda fs: fs.size)
 
-        #preprocessor.convert_to_xml()
-        font_specs = preprocessor.enumerate_font_specs()
+        font_specs = preprocessor.font_specs
         font_specs.sort(key=lambda fs: fs.size)
         the(len(font_specs)).should.equal(len(ground_truths))
         for truth, spec in zip(ground_truths, font_specs):
@@ -76,7 +75,7 @@ with given.a_FontSpecPreprocessor:
         ]
         default_font = FontSpec(size=8, color="221714")
 
-        words = preprocessor.enumerate_words()
+        words = preprocessor._words
         the(len(words)).should.equal(157)
         for word in words:
             isdefault = True
@@ -155,9 +154,6 @@ with given.a_FontSpecPreprocessor:
 
     with then.every_word_object_of_a_pdf_page_will_have_its_font_spec:
         page = preprocessor.run()
-        the(page.words[0]['font'].size).should.equal(38)
-        the(page.words[0]['font'].color).should.equal("221714")
-        the(page.words[1]['font'].size).should.equal(27)
-        the(page.words[1]['font'].color).should.equal("221714")
-        the(page.words[2]['font'].size).should.equal(8)
-        the(page.words[2]['font'].color).should.equal("221714")
+        the(page.words[0]['font']).should.equal(FontSpec(38, "221714"))
+        the(page.words[1]['font']).should.equal(FontSpec(27, "221714"))
+        the(page.words[2]['font']).should.equal(FontSpec(8, "221714"))

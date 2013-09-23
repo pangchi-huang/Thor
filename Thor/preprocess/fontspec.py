@@ -18,8 +18,9 @@ class FontSpecPreprocessor(object):
     """Preprocessor which gives word its font spec, e.g. color, font size.
 
     Attributes:
+        pdf_filename: The filename of the PDF document.
         page: A PDFPage instance.
-        words: A list of Word instance.
+        font_specs: A list of FontSpec instances.
 
     """
 
@@ -33,15 +34,25 @@ class FontSpecPreprocessor(object):
 
         self.convert_to_xml()
 
-    def enumerate_font_specs(self):
+    @property
+    def font_specs(self):
+        """A list of FontSpec instances."""
 
         return self._fontspecs.values()
 
-    def enumerate_words(self):
-
-        return self._words
-
     def match(self, word):
+        """Match an xml textual object to a PDFPage word object.
+
+        Currently, the matching process only uses geometry information.
+        No textual information is used.
+
+        Args:
+            word: An xml textual object.
+
+        Returns:
+            A PDFPage word object or None.
+
+        """
 
         x, y = word['left'], word['top']
         w, h = word['width'], word['height']
@@ -55,27 +66,38 @@ class FontSpecPreprocessor(object):
         return None
 
     def run(self):
+        """Main function.
 
-        self.page.fonts = self.enumerate_font_specs()
+        Giving FontSpec to word object of PDFPage.
+
+        Returns:
+            A PDFPage instance.
+
+        """
+
+        self.page.fonts = self.font_specs
 
         votes = defaultdict(Counter)
         for word in self._words:
             match_word = self.match(word)
-            if match_word is None:
-                continue
+            if match_word is not None:
+                votes[id(match_word)][word['font']] += 1
 
-            votes[id(match_word)][word['font']] += 1
-
-        for key in votes:
+        for match_word_id in votes:
             for word in self.page.words:
-                if id(word) == key:
-                    counter = votes[key]
+                if id(word) == match_word_id:
+                    counter = votes[match_word_id]
                     most_fontspec = counter.most_common(1)[0]
 
+                    fontspec_found = False
                     for fontspec in self.page.fonts:
                         if fontspec == most_fontspec[0]:
                             word['font'] = fontspec
+                            fontspec_found = True
                             break
+
+                    if fontspec_found:
+                        break
 
         return self.page
 

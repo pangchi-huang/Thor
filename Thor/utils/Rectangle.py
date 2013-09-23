@@ -223,17 +223,27 @@ class TextRectangle(Rectangle):
 
     Attributes:
         t: The text in the bounding box.
+        font: The FontSpec instance.
 
     """
 
-    ROW = 0
-    COL = 1
-    UNKNOWN = 2
+    UNKNOWN = 0
+    LANDSCAPE = 1
+    PORTRAIT = 2
 
-    def __init__(self, x, y, w, h, t):
+    def __init__(self, x, y, w, h, t, font=None):
 
         super(TextRectangle, self).__init__(x, y, w, h)
         self._t = t
+        self._font = font
+        self._orientation = None
+
+    @classmethod
+    def create(cls, word_obj):
+
+        return cls(word_obj['x'], word_obj['y'],
+                   word_obj['w'], word_obj['h'],
+                   word_obj['t'], word_obj.get('font'))
 
     @property
     def t(self):
@@ -241,13 +251,45 @@ class TextRectangle(Rectangle):
         return self._t
 
     @property
+    def font(self):
+
+        return self._font
+
+    @property
     def orientation(self):
+        """Represents the text reading direction."""
 
-        if len(self.t) > 1:
-            if self.w >= self.h:
-                return self.ROW
+        if self._orientation is not None:
+            return self._orientation
 
-            return self.COL
+        if self.t is None:
+            self._orientation = self.UNKNOWN
+        elif len(self.t) > 1:
+            if self.w == self.h:
+                self._orientation = self.UNKNOWN
+            elif self.w > self.h:
+                self._orientation = self.LANDSCAPE
+            else:
+                self._orientation = self.PORTRAIT
+        else:
+            self._orientation = self.UNKNOWN
 
-        return self.UNKNOWN
+        return self._orientation
 
+    def __repr__(self):
+        """Get the string representation of this object."""
+
+        return "TextRectangle(x=%s, y=%s, w=%s, h=%s, t=%s)" % \
+               (self._x, self._y, self._w, self._h, self._t)
+
+    def __eq__(self, other):
+        """Implements == operator."""
+
+        return self.x == other.x and self.y == other.y and \
+               self.w == other.w and self.h == other.h and \
+               self.t == other.t
+
+    def __hash__(self):
+        """Use TextRectangle as dict key."""
+
+        return hash((self.x, self.y, self.w, self.h, self.t))
