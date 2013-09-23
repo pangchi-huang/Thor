@@ -288,11 +288,14 @@ class DocumentSpace(object):
         else:
             self.subspaces = (DocumentSpace(down), DocumentSpace(up))
 
-    def segment_words_horizontally(self, min_size=0):
+    def segment_words_horizontally(self, min_size=0, scale=1., offset=0.):
         """Segment words by y-coordinate.
 
         Args:
             min_size: The minimum distance between word segments.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A list of word segments. A word segment is a list of
@@ -308,30 +311,34 @@ class DocumentSpace(object):
 
         """
 
-        cuts = self.enumerate_horizontal_cuts(min_size)
+        cuts = self.enumerate_horizontal_cuts(min_size, scale, offset)
 
         if len(cuts) == 0:
             return [self.words]
 
         ret = []
-        cuts = [0] + map(lambda c: c.y, cuts) + [float('inf')]
+        cuts = [0] + map(lambda c: c.y + c.h / 2, cuts) + [float('inf')]
         for i in xrange(len(cuts) - 1):
             y1, y2 = cuts[i], cuts[i + 1]
             cluster = []
 
             for word in self.words:
-                if y1 <= word.y and word.y + word.h <= y2:
+                #if y1 <= word.y and word.y + word.h <= y2:
+                if y1 <= word.y + word.h / 2 <= y2:
                     cluster.append(word)
 
             ret.append(cluster)
 
         return ret
 
-    def segment_words_vertically(self, min_size=0):
+    def segment_words_vertically(self, min_size=0, scale=1., offset=0.):
         """Segment words by x-coordinate.
 
         Args:
             min_size: The minimum distance between word segments.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A list of word segments. A word segment is a list of
@@ -347,20 +354,21 @@ class DocumentSpace(object):
 
         """
 
-        cuts = self.enumerate_vertical_cuts(min_size)
+        cuts = self.enumerate_vertical_cuts(min_size, scale, offset)
 
         if len(cuts) == 0:
             return [self.words]
 
         ret = []
-        cuts = [0] + map(lambda c: c.x, cuts) + [float('inf')]
+        cuts = [0] + map(lambda c: c.x + c.w / 2, cuts) + [float('inf')]
         cuts.reverse()
         for i in xrange(len(cuts) - 1):
             x1, x2 = cuts[i], cuts[i + 1]
             cluster = []
 
             for word in self.words:
-                if x2 <= word.x and word.x + word.w <= x1:
+                if x2 <= word.x + word.w / 2 <= x1:
+                #if x2 <= word.x and word.x + word.w <= x1:
                     cluster.append(word)
 
             ret.append(cluster)
@@ -377,30 +385,48 @@ class DocumentSpace(object):
         num_char = sum((len(word.t) for word in self.words))
 
         if self.reading_direction == self.LEFT_TO_RIGHT:
-            avg_char_size = 1.0 * sum((word.w for word in self.words)) / num_char
-            segments = self.segment_words_horizontally()
+            avg_char_size = 1. * sum((word.w for word in self.words)) / num_char
+            segments = self.segment_words_horizontally(scale=0.7)
             map(lambda segment: segment.sort(key=lambda word: word.x), segments)
             median_x = _median(map(lambda segment: segment[0].x, segments))
 
+            prev_fontspec = None
             for segment in segments:
                 paragraph = ''.join((word.t for word in segment))
-                if segment[0].x > median_x + avg_char_size * 0.75:
+                longest_fontspec = max(
+                    map(lambda word: (word.w, word.font), segment),
+                    key=lambda x: x[0]
+                )[1]
+
+                if longest_fontspec != prev_fontspec:
+                    ret.append('\n' + paragraph)
+                    prev_fontspec = longest_fontspec
+                elif segment[0].x > median_x + avg_char_size * 0.75:
                     ret.append('\n' + paragraph)
                 else:
                     ret.append(paragraph)
 
         else:
-            avg_char_size = 1.0 * sum((word.h for word in self.words)) / num_char
-            segments = self.segment_words_vertically()
+            avg_char_size = 1. * sum((word.h for word in self.words)) / num_char
+            segments = self.segment_words_vertically(scale=0.7)
             map(lambda segment: segment.sort(key=lambda word: word.y), segments)
             median_y = _median(map(lambda segment: segment[0].y, segments))
             #print 'avg_char_size:', avg_char_size
             #print 'median_y:', median_y
 
+            prev_fontspec = None
             for segment in segments:
-                print [word.y for word in segment]
+                #print [word.y for word in segment]
                 paragraph = ''.join((word.t for word in segment))
-                if segment[0].y > median_y + avg_char_size * 0.75:
+                longest_fontspec = max(
+                    map(lambda word: (word.h, word.font), segment),
+                    key=lambda x: x[0]
+                )[1]
+
+                if longest_fontspec != prev_fontspec:
+                    ret.append('\n' + paragraph)
+                    prev_fontspec = longest_fontspec
+                elif segment[0].y > median_y + avg_char_size * 0.75:
                     ret.append('\n' + paragraph)
                 else:
                     ret.append(paragraph)
