@@ -19,3 +19,15 @@ class FontSpec(object):
     def __init__(self, size, color):
         self.size = size
         self.color = color
+
+    def __hash__(self):
+
+        return hash((self.size, self.color))
+
+    def __repr__(self):
+
+        return 'FontSpec<size=%s, color=#%s>' % (self.size, self.color)
+
+    def __eq__(self, other):
+
+        return self.size == other.size and self.color == other.color
