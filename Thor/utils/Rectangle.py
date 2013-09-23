@@ -223,6 +223,7 @@ class TextRectangle(Rectangle):
 
     Attributes:
         t: The text in the bounding box.
+        font: The FontSpec instance.
 
     """
 
@@ -230,22 +231,29 @@ class TextRectangle(Rectangle):
     LANDSCAPE = 1
     PORTRAIT = 2
 
-    def __init__(self, x, y, w, h, t):
+    def __init__(self, x, y, w, h, t, font=None):
 
         super(TextRectangle, self).__init__(x, y, w, h)
         self._t = t
+        self._font = font
         self._orientation = None
 
     @classmethod
     def create(cls, word_obj):
 
         return cls(word_obj['x'], word_obj['y'],
-                   word_obj['w'], word_obj['h'], word_obj['t'])
+                   word_obj['w'], word_obj['h'],
+                   word_obj['t'], word_obj.get('font'))
 
     @property
     def t(self):
 
         return self._t
+
+    @property
+    def font(self):
+
+        return self._font
 
     @property
     def orientation(self):

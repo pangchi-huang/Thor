@@ -32,6 +32,8 @@ class WordStatistician(object):
     def _run(self, words):
 
         self.count = len(words)
+        if self.count == 0:
+            return
 
         for ix, word in enumerate(words):
             self.avg_width += 1.0 * word.w
