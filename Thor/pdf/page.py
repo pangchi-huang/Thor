@@ -24,15 +24,17 @@ class PDFPage(object):
         width: The width of the page
         height: The height of the page
         words: A list of words with bounding box information.
+        fonts: A list of FontSpec instances.
 
     """
 
-    def __init__(self, page_num=0, width=0, height=0, words=None):
+    def __init__(self, page_num=0, width=0, height=0, words=None, fonts=None):
 
         self.page_num = page_num
         self.width = width
         self.height = height
         self.words = words
+        self.fonts = fonts
 
     def __json__(self):
 
