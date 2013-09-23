@@ -50,8 +50,26 @@ with given.a_DocumentSpace:
 
         with then.it_can_enumerate_all_possible_x_cuts:
             x_cuts = ds.enumerate_vertical_cuts()
+            the(len(x_cuts)).should.equal(3)
             the(x_cuts[0]).should.equal(Rectangle(100, 0, 400, 630))
             the(x_cuts[1]).should.equal(Rectangle(800, 0, 200, 630))
+            the(x_cuts[2]).should.equal(Rectangle(1100, 0, 100, 630))
+
+            with and_.it_can_transform_words_before_enumerating_cuts:
+                x_cuts = ds.enumerate_vertical_cuts(scale=0.5)
+                the(len(x_cuts)).should.equal(4)
+                the(x_cuts[0]).should.equal(Rectangle(75, 0, 450, 630))
+                the(x_cuts[1]).should.equal(Rectangle(575, 0, 75, 630))
+                the(x_cuts[2]).should.equal(Rectangle(750, 0, 275, 630))
+                the(x_cuts[3]).should.equal(Rectangle(1075, 0, 250, 630))
+
+                x_cuts = ds.enumerate_vertical_cuts(scale=0.5, offset=100)
+                the(len(x_cuts)).should.equal(4)
+                the(x_cuts[0]).should.equal(Rectangle(175, 0, 450, 630))
+                the(x_cuts[1]).should.equal(Rectangle(675, 0, 75, 630))
+                the(x_cuts[2]).should.equal(Rectangle(850, 0, 275, 630))
+                the(x_cuts[3]).should.equal(Rectangle(1175, 0, 250, 630))
+
 
         with and_.it_can_choose_the_widest_one_and_divides_itself_into_2_parts:
             x_cut = ds.get_widest_vertical_cut()
@@ -76,10 +94,22 @@ with given.a_DocumentSpace:
         ])
         ds = DocumentSpace(words)
 
-        with and_.it_can_enumerate_all_possible_y_cuts_as_well:
+        with then.it_can_enumerate_all_possible_y_cuts_as_well:
             y_cuts = ds.enumerate_horizontal_cuts()
+            the(len(y_cuts)).should.equal(2)
             the(y_cuts[0]).should.equal(Rectangle(0, 10, 100, 15))
             the(y_cuts[1]).should.equal(Rectangle(0, 35, 100, 165))
+
+            with and_.it_can_transform_words_before_enumerating_cuts:
+                y_cuts = ds.enumerate_horizontal_cuts(scale=0.5)
+                the(len(y_cuts)).should.equal(2)
+                the(y_cuts[0]).should.equal(Rectangle(0, 7.5, 100, 20))
+                the(y_cuts[1]).should.equal(Rectangle(0, 32.5, 100, 170))
+
+                y_cuts = ds.enumerate_horizontal_cuts(scale=0.5, offset=100)
+                the(len(y_cuts)).should.equal(2)
+                the(y_cuts[0]).should.equal(Rectangle(0, 107.5, 100, 20))
+                the(y_cuts[1]).should.equal(Rectangle(0, 132.5, 100, 170))
 
         with and_.it_can_choose_the_widest_one_and_divides_itself_into_2_parts:
             y_cut = ds.get_widest_horizontal_cut()

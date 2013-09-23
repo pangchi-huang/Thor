@@ -82,12 +82,15 @@ class DocumentSpace(object):
 
         return self._reading_direction
 
-    def enumerate_vertical_cuts(self, min_size=0):
+    def enumerate_vertical_cuts(self, min_size=0, scale=1., offset=0.):
         """Enumerates all vertical cuts.
 
         Args:
             min_size: Minimum width of vertical cut. All enumerated
                 vertical cuts must have width greater than it.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A list of Rectangle instances.
@@ -109,8 +112,16 @@ class DocumentSpace(object):
             if word.y + word.h > world[3]:
                 world[3] = word.y + word.h
 
-            intervals.add(Interval(word.x, word.x + word.w))
+            i = Interval(word.x, word.x + word.w)
 
+            if scale != 1.:
+                begin, end = i.begin, i.end
+                i.begin = (begin * (1 + scale) + end * (1 - scale)) * 0.5
+                i.end = (begin * (1 - scale) + end * (1 + scale)) * 0.5
+
+            i.begin += offset
+            i.end += offset
+            intervals.add(i)
 
         for c in intervals.gaps:
             if c.length < min_size:
@@ -121,12 +132,15 @@ class DocumentSpace(object):
 
         return ret
 
-    def get_widest_vertical_cut(self, min_size=0):
+    def get_widest_vertical_cut(self, min_size=0, scale=1., offset=0.):
         """Get the biggest vertical cut.
 
         Args:
             min_size: The returned vertical width must have width
                 greater than it.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A Rectangle instance. If no vertical cut is available, None
@@ -134,7 +148,7 @@ class DocumentSpace(object):
 
         """
 
-        cuts = self.enumerate_vertical_cuts(min_size)
+        cuts = self.enumerate_vertical_cuts(min_size, scale, offset)
         if len(cuts) == 0:
             return None
         elif len(cuts) == 1:
@@ -142,12 +156,15 @@ class DocumentSpace(object):
 
         return max(*cuts, key=lambda c: c.w)
 
-    def enumerate_horizontal_cuts(self, min_size=0):
+    def enumerate_horizontal_cuts(self, min_size=0, scale=1., offset=0.):
         """Enumerates all horizontal cuts.
 
         Args:
             min_size: Minimum height of horizontal cut. All enumerated
                 horizontal cuts must have height greater than it.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A list of Rectangle instances.
@@ -169,11 +186,16 @@ class DocumentSpace(object):
             if word.y + word.h > world[3]:
                 world[3] = word.y + word.h
 
-            #print word.y, word.y + word.h, word.t.encode('utf8')
-            intervals.add(Interval(word.y, word.y + word.h))
-        #print '------------------'
-        #print [intervals[i] for i in xrange(len(intervals))]
-        #print intervals.gaps
+            i = Interval(word.y, word.y + word.h)
+
+            if scale != 1.:
+                begin, end = i.begin, i.end
+                i.begin = (begin * (1 + scale) + end * (1 - scale)) * 0.5
+                i.end = (begin * (1 - scale) + end * (1 + scale)) * 0.5
+
+            i.begin += offset
+            i.end += offset
+            intervals.add(i)
 
         for c in intervals.gaps:
             if c.length < min_size:
@@ -182,16 +204,17 @@ class DocumentSpace(object):
             cut = Rectangle(world[0], c.begin, world[2] - world[0], c.length)
             ret.append(cut)
 
-        #print ret
-
         return ret
 
-    def get_widest_horizontal_cut(self, min_size=0):
+    def get_widest_horizontal_cut(self, min_size=0, scale=1., offset=0.):
         """Get the biggest horizontal cut.
 
         Args:
             min_size: The returned horizontal width must have height
                 greater than it.
+            scale: A floating number to scale each word against its
+                center.
+            offset: A floating number to translate each word.
 
         Returns:
             A Rectangle instance. If no horizontal cut is available, None
@@ -199,7 +222,7 @@ class DocumentSpace(object):
 
         """
 
-        cuts = self.enumerate_horizontal_cuts(min_size)
+        cuts = self.enumerate_horizontal_cuts(min_size, scale, offset)
         if len(cuts) == 0:
             return None
         elif len(cuts) == 1:
@@ -223,9 +246,10 @@ class DocumentSpace(object):
         left, right = [], []
 
         for word in self.words:
-            if word.x >= cut_point:
+            word_center = word.x + word.w / 2
+            if word_center > cut_point:
                 right.append(word)
-            elif word.x + word.w <= cut_point:
+            elif word_center < cut_point:
                 left.append(word)
             else:
                 raise DocumentSpaceException('cut a word: ' + unicode(word))
@@ -251,9 +275,10 @@ class DocumentSpace(object):
         up, down = [], []
 
         for word in self.words:
-            if word.y >= cut_point:
+            word_center = word.y + word.h / 2
+            if word_center > cut_point:
                 down.append(word)
-            elif word.y + word.h <= cut_point:
+            elif word_center < cut_point:
                 up.append(word)
             else:
                 raise DocumentSpaceException('cut a word: ' + unicode(word))
