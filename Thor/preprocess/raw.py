@@ -252,7 +252,8 @@ class Stream(object):
 
         num_matches = len(self.matches)
 
-        if num_matches < 3:
+        # too many matches will spend a lot of computing time
+        if num_matches < 3 or num_matches > 16:
             Stream.discard_cache[cache_key] = False
             return False
 
