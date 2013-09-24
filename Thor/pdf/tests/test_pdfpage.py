@@ -9,6 +9,7 @@ import ujson
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.utils.FontSpec import FontSpec
 from Thor.utils.Rectangle import Rectangle
 
 
@@ -86,10 +87,31 @@ with given.a_pdf:
     with when.serialize_it_to_json:
 
         p = PDFPage(page_num=1, width=99.9, height=55.5)
-        p.words = [
-            {'x': 0, 'y': 0, 'w': 100, 'h': 30, 't': u'GG'},
-            {'x': 100, 'y': 250, 'w': 60, 'h': 120, 't': u'drink water'},
+        p.fonts = [
+            FontSpec(size=15, color='000000'),
+            FontSpec(size=20, color='ffffff'),
         ]
+        p.words = [
+            {
+                'x': 0, 'y': 0, 'w': 100, 'h': 30,
+                't': u'GG', 'font': p.fonts[0]
+            },
+            {
+                'x': 100, 'y': 250, 'w': 60, 'h': 120,
+                't': u'drink water', 'font': p.fonts[1]
+            },
+        ]
+        p.serialized_words = [
+            {
+                'x': 0, 'y': 0, 'w': 100, 'h': 30,
+                't': u'GG', 'font': {'size': 15, 'color': '000000'}
+            },
+            {
+                'x': 100, 'y': 250, 'w': 60, 'h': 120,
+                't': u'drink water', 'font': {'size': 20, 'color': 'ffffff'}
+            }
+        ]
+
         serialized = PDFPage.dumps(p)
         deserialized = ujson.loads(serialized)
 
@@ -104,8 +126,14 @@ with given.a_pdf:
 
         with and_.words_should_be_correct:
             for word_ix, word in enumerate(deserialized['data']):
-                for key in word:
-                    the(word[key]).should.equal(p.words[word_ix][key])
+                the(word).should.equal(p.serialized_words[word_ix])
+
+        with and_.fonts_should_be_correct:
+            fonts = deserialized['fonts']
+            the(len(fonts)).should.equal(2)
+            the(fonts[0]).should.equal({'size': 15, 'color': '000000'})
+            the(fonts[1]).should.equal({'size': 20, 'color': 'ffffff'})
+
 
     with when.deserialize_from_json:
 
@@ -115,8 +143,11 @@ with given.a_pdf:
                 "width": 3.14,
                 "height": 1.618,
                 "data": [
-                    {"x": 3, "y": 0.14, "w": 0.301, "h": 0.4771, "t": "OK"},
-                    {"x": 1, "y": 0.618, "w": 0.8451, "h": 0.7781, "t": "FAIL"}
+                    {"x": 3, "y": 14, "w": 301, "h": 4771, "t": "OK", "font": {"size": 10, "color": "000000"}},
+                    {"x": 1, "y": 618, "w": 8451, "h": 7781, "t": "FAIL"}
+                ],
+                "fonts": [
+                    {"size": 10, "color": "000000"}
                 ]
             }"""
         deserialized = ujson.loads(serialized)
@@ -132,6 +163,15 @@ with given.a_pdf:
             the(abs(p.height - 1.618)).should.be_less_than(1.0e-3)
 
         with and_.words_should_be_correct:
-            for word_ix, word in enumerate(deserialized['data']):
-                for key in word:
-                    the(word[key]).should.equal(p.words[word_ix][key])
+            the(p.words[0]).should.equal({
+                'x': 3, 'y': 14, 'w': 301, 'h': 4771,
+                't': 'OK', 'font': FontSpec(size=10, color='000000')
+            })
+            the(p.words[1]).should.equal({
+                'x': 1, 'y': 618, 'w': 8451, 'h': 7781,
+                't': 'FAIL', 'font': None
+            })
+
+        with and_.fonts_shoule_be_correct:
+            the(len(p.fonts)).should.equal(1)
+            the(p.fonts[0]).should.equal(FontSpec(size=10, color='000000'))

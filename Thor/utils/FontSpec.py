@@ -17,6 +17,7 @@ class FontSpec(object):
     """
 
     def __init__(self, size, color):
+
         self.size = size
         self.color = color
 
@@ -31,3 +32,17 @@ class FontSpec(object):
     def __eq__(self, other):
 
         return self.size == other.size and self.color == other.color
+
+    @property
+    def serializable(self):
+        """A JSON serializable."""
+
+        return {'size': self.size, 'color': self.color}
+
+    @classmethod
+    def deserialize(cls, serialized):
+
+        if serialized is None:
+            return None
+
+        return FontSpec(size=serialized['size'], color=serialized['color'])
