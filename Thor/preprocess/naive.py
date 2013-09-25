@@ -217,6 +217,9 @@ class WordFactory(object):
             return False
 
         v = center1 - center2
+        if v.x == 0 and v.y == 0:
+            return False
+
         cos = abs(v.x) / (v.x * v.x + v.y * v.y) ** 0.5
         if cos < self.SIMILARITY:
             return False

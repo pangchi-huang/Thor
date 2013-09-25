@@ -27,7 +27,6 @@ class XYCut(object):
 
         return ret
 
-
     def cut(self, space, prefix):
 
         if len(space.words) <= 1:
