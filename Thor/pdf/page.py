@@ -41,7 +41,7 @@ class PDFPage(object):
 
         words = map(lambda w: w.copy(), self.words)
         for word in words:
-            word['font'] = word['font'].serializable
+            word['font'] = word['font'].serializable if 'font' in word else None
 
         return {
             'page': self.page_num,
