@@ -1,0 +1,183 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>Prototype</title>
+<meta name="description" content="PDF extracting text tool prototype">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+<style>
+    #left-section, #right-section {
+        float: left;
+        position: relative;
+        margin: 20px 20px;
+    }
+
+    #word-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: auto;
+    }
+    #word-container .word {
+        border: 1px solid;
+        position: absolute;
+    }
+    #word-container .word.is-selected {
+        background-color: red;
+        opacity: 0.3;
+    }
+
+    #img-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 1px solid #333;
+        z-index: 1000;
+    }
+
+    #select-area {
+        position: absolute;
+        border: 1px dotted red;
+    }
+
+    #output {
+        width: 600px;
+        max-width: 600px;
+        height: 100%;
+    }
+</style>
+<body>
+    <!--[if lt IE 7]>
+      <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+    <![endif]-->
+
+    <!--[if lt IE 9]>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/2.1.0/es5-shim.min.js"></script>
+      <script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
+    <![endif]-->
+
+    <div id="left-section">
+        <img src="output.jpg" id="pdf-image" onmousedown="return false;">
+        <div id="word-container"></div>
+    </div>
+    <div id="right-section">
+        <textarea id="output"></textarea>
+    </div>
+
+
+</body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="output.js"></script>
+<script>
+    function populateWords()
+    {
+        for (var i = 0; i < pdfdata.data.length; i++) {
+            var word = pdfdata.data[i];
+            var $elem = $('<div class="word" style="top: ' + word.y + 'px; left: ' + word.x + 'px; width: ' + (word.w - 2) + 'px; height: ' + (word.h - 2) + 'px;"></div>');
+
+            $elem.data('word', word);
+            $('#word-container').append($elem);
+        }
+    }
+
+    function makeImageOverlay()
+    {
+        var $img = $('#pdf-image'),
+            width = $img.get(0).clientWidth,
+            height = $img.get(0).clientHeight,
+            $overlay = $('<div id="img-overlay" style="width: ' + width + 'px; height: ' + height + 'px;"></div>');
+
+        $('#left-section').append($overlay);
+        $('#img-overlay').on('mousedown', onMouseDown);
+    }
+
+    function onMouseDown(e)
+    {
+        var startX = e.offsetX,
+            startY = e.offsetY,
+            $area = $('<div id="select-area"></div>');
+
+        $('.word').removeClass('is-selected');
+
+        $('#left-section #select-area').remove();
+        $area.attr('data-start-x', startX)
+             .attr('data-start-y', startY);
+        $('#left-section').append($area);
+
+        $('#img-overlay').on('mousemove', function(eMove)
+        {
+            var currX = eMove.offsetX,
+                currY = eMove.offsetY,
+                $area = $('#left-section #select-area'), area,
+                startX = parseInt($area.attr('data-start-x'), 10),
+                startY = parseInt($area.attr('data-start-y'), 10),
+                minX, minY, maxX, maxY, width, height;
+
+            minX = Math.min(startX, currX); minY = Math.min(startY, currY);
+            maxX = Math.max(startX, currX); maxY = Math.max(startY, currY);
+            width = maxX - minX; height = maxY - minY;
+
+            $area.css({
+                top: minY + 'px',
+                left: minX + 'px',
+                width: width + 'px',
+                height: height + 'px'
+            });
+            area = {x: minX, y: minY, w: width, h: height};
+            console.log(area);
+
+            $('.word').each(function()
+            {
+                var $this = $(this);
+
+                if (insideArea(area, $this.data('word'))) {
+                    $this.addClass('is-selected');
+                }
+                else {
+                    $this.removeClass('is-selected');
+                }
+            });
+        });
+
+        $('#img-overlay').one('mouseup', function(eUp)
+        {
+            var $area = $('#left-section #select-area');
+
+            console.log({
+                x: parseInt($area.css('left'), 10),
+                y: parseInt($area.css('top'), 10),
+                w: $area.innerWidth(),
+                h: $area.innerHeight()
+            });
+            $area.remove();
+            $('#img-overlay').off('mousemove');
+        });
+    }
+
+    function insideArea(area, word)
+    {
+        var $area = $('#select-area'),
+            areaX = parseInt($area.css('left'), 10),
+            areaY = parseInt($area.css('top'), 10),
+            areaW = $area.innerWidth(),
+            areaH = $area.innerHeight(),
+            centerX = word.x + word.w / 2,
+            centerY = word.y + word.h / 2;
+
+        return area.x <= centerX && centerX <= (area.x + area.w) &&
+               area.y <= centerY && centerY <= (area.y + area.h);
+    }
+
+    $(document).ready(function()
+    {
+        populateWords();
+        makeImageOverlay();
+    });
+</script>
+</html>
