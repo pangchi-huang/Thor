@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 # standard library imports
+from contextlib import closing
+import subprocess
 import sys
 
 # third party related imports
@@ -24,22 +26,25 @@ def main(argv):
     page = PDFPage.extract_texts(filename, [page_num])[0]
     preprocessor = RawTextPreprocessor(filename, page)
     page = preprocessor.run()
-    #with open('raw.txt', 'wb') as f:
-    #    f.write(page.serialize())
 
     preprocessor = NaivePreprocessor(filename, page)
     page = preprocessor.run()
-    #with open('naive.txt', 'wb') as f:
-    #    f.write(page.serialize())
 
     preprocessor = FontSpecPreprocessor(filename, page)
     page = preprocessor.run()
 
-    worker = XYCut()
-    result = worker.run(page)
-    out = '\n-----------------------------------------------\n'.join(result)
-    print '\n\n\n'
-    print out.encode('utf8')
+    cmd = ('pdftocairo', '-f', str(page_num), '-l', str(page_num),
+           '-jpeg', '-singlefile', '-cropbox',
+           '-scale-to-x', str(int(page.width)), '-scale-to-y', '-1',
+           filename, 'output')
+    subprocess.check_call(cmd)
+
+    with closing(open('output.js', 'wb')) as f:
+        f.write('window.pdfdata=')
+        f.write(page.serialize())
+        f.write(';')
+
 
 if __name__ == '__main__':
+
     main(sys.argv)

@@ -10,6 +10,7 @@ from pyquery import PyQuery
 import ujson
 
 # local library imports
+from Thor.utils.FontSpec import FontSpec
 from Thor.utils.Rectangle import Rectangle
 
 
@@ -34,15 +35,20 @@ class PDFPage(object):
         self.width = width
         self.height = height
         self.words = words
-        self.fonts = fonts
+        self.fonts = fonts or []
 
     def __json__(self):
+
+        words = map(lambda w: w.copy(), self.words)
+        for word in words:
+            word['font'] = word['font'].serializable if 'font' in word else None
 
         return {
             'page': self.page_num,
             'width': self.width,
             'height': self.height,
-            'data': self.words,
+            'data': words,
+            'fonts': map(lambda f: f.serializable, self.fonts),
         }
 
     def serialize(self):
@@ -69,6 +75,11 @@ class PDFPage(object):
         ret.width = deserialized.get('width', 0)
         ret.height = deserialized.get('height', 0)
         ret.words = deserialized.get('data')
+        for word in ret.words:
+            word['font'] = FontSpec.deserialize(word.get('font'))
+
+        ret.fonts = map(lambda f: FontSpec.deserialize(f),
+                        deserialized.get('fonts', []))
 
         return ret
 
