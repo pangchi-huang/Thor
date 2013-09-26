@@ -89,12 +89,13 @@
     function makeImageOverlay()
     {
         var $img = $('#pdf-image'),
-            width = $img.get(0).clientWidth,
-            height = $img.get(0).clientHeight,
+            width = $img.innerWidth(),
+            height = $img.innerHeight(),
             $overlay = $('<div id="img-overlay" style="width: ' + width + 'px; height: ' + height + 'px;"></div>');
 
         $('#left-section').append($overlay);
         $('#img-overlay').on('mousedown', onMouseDown);
+        $('#output').css('height', height / 2 + 'px');
     }
 
     function onMouseDown(e)

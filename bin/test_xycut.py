@@ -24,13 +24,13 @@ def main(argv):
     page = PDFPage.extract_texts(filename, [page_num])[0]
     preprocessor = RawTextPreprocessor(filename, page)
     page = preprocessor.run()
-    with open('raw.txt', 'wb') as f:
-        f.write(page.serialize())
+    #with open('raw.txt', 'wb') as f:
+    #    f.write(page.serialize())
 
     preprocessor = NaivePreprocessor(filename, page)
     page = preprocessor.run()
-    with open('naive.txt', 'wb') as f:
-        f.write(page.serialize())
+    #with open('naive.txt', 'wb') as f:
+    #    f.write(page.serialize())
 
     preprocessor = FontSpecPreprocessor(filename, page)
     page = preprocessor.run()
