@@ -31,7 +31,14 @@ class FontSpec(object):
 
     def __eq__(self, other):
 
-        return self.size == other.size and self.color == other.color
+        try:
+            return self.size == other.size and self.color == other.color
+        except AttributeError, e:
+            return False
+
+    def __ne__(self, other):
+
+        return not self == other
 
     @property
     def serializable(self):
