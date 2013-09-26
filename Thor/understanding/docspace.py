@@ -427,7 +427,7 @@ class DocumentSpace(object):
                     ret.append('\n' + paragraph)
                     prev_fontspec = longest_fontspec
                 elif segment[0].y > median_y + avg_char_size * 0.75:
-                    ret.append('\n' + paragraph)
+                    ret.append('\n\n' + paragraph)
                 else:
                     ret.append(paragraph)
 
@@ -443,7 +443,9 @@ class DocumentSpace(object):
             subspace.traverse(ret)
 
 
-def _median(sorted_data):
+def _median(data):
+
+    sorted_data = sorted(data)
 
     half = len(sorted_data) / 2
     if len(sorted_data) % 2 == 0:
