@@ -104,7 +104,13 @@ class RawTextPreprocessor(object):
         keep_merging = True
         while keep_merging:
             keep_merging = False
-            for stream_ix, stream in enumerate(self.raw_streams):
+
+            # the more lengthy words merge earlier
+            sorted_streams = sorted(
+                zip(xrange(len(self.raw_streams)), self.raw_streams),
+                key=lambda (s_ix, s): -1 * len(s._stream)
+            )
+            for stream_ix, stream in sorted_streams:
                 if stream_ix not in can_merge_streams:
                     if not stream.may_merge():
                         num_matches = len(stream.matches)
@@ -153,6 +159,9 @@ class Word(object):
 
         return Rectangle(self['x'], self['y'], self['w'], self['h'])
 
+    def __repr__(self):
+
+        return 'Word<_word_obj=%s>' % self._word_obj
 
 class Stream(object):
     """A data structure for raw stream object.
@@ -253,7 +262,7 @@ class Stream(object):
         num_matches = len(self.matches)
 
         # too many matches will spend a lot of computing time
-        if num_matches < 3 or num_matches > 16:
+        if num_matches < 3 or num_matches > 30:
             Stream.discard_cache[cache_key] = False
             return False
 
@@ -273,8 +282,7 @@ class Stream(object):
             if self._has_duplicate_word(match_indices):
                 continue
 
-            # the x-positions of matched words should increase monotonically
-            match_set = map(lambda ix: self.matches[ix], match_indices)
+            match_set = map(lambda mix: self.matches[mix], match_indices)
             if  sorted(match_set, key=lambda m: m.start) != \
                 sorted(match_set, key=lambda m: m.data['x']):
                 continue
@@ -357,6 +365,11 @@ class Match(object):
         self.start = start
         self.end = end
 
+    def __repr__(self):
+
+        return 'Match<index=%s, data=%s, start=%s, end=%s>' % \
+               (self.index, self.data, self.start, self.end)
+
 
 def _get_linear_regression_params(points):
 
@@ -370,9 +383,9 @@ def _get_linear_regression_params(points):
     if denominator == 0:
         return float('inf'), None
 
-    b = sum(map(lambda c: (c.x - mean.x) * (c.y - mean.y), points)) / \
+    a = sum(map(lambda c: (c.x - mean.x) * (c.y - mean.y), points)) / \
         denominator
-    a = mean.y - b * mean.x
+    b = mean.y - a * mean.x
 
     return a, b
 
