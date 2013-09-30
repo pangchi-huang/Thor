@@ -22,13 +22,10 @@ with given.a_RawTextPreprocessor:
     sample_pdf = os.path.join(curr_dir, 'fixture', 'test1.pdf')
 
     with closing(open(sample_json)) as f:
-        sample = ujson.loads(f.read().decode('utf8'))
-
-    preprocessor = RawTextPreprocessor(
-        sample_pdf,
-        PDFPage(page_num=sample['page'], width=sample['width'],
-                height=sample['height'], words=sample['data'])
-    )
+        preprocessor = RawTextPreprocessor(
+            sample_pdf,
+            PDFPage.loads(f.read().decode('utf8'))
+        )
 
     with then.it_extracts_texts_in_content_stream_order:
 
@@ -246,13 +243,10 @@ with given.a_RawTextPreprocessor:
         sample_json = os.path.join(curr_dir, 'fixture', 'test2.json')
 
         with closing(open(sample_json)) as f:
-            sample = ujson.loads(f.read().decode('utf8'))
-
-        preprocessor = RawTextPreprocessor(
-            sample_pdf,
-            PDFPage(page_num=sample['page'], width=sample['width'],
-                    height=sample['height'], words=sample['data'])
-        )
+            preprocessor = RawTextPreprocessor(
+                sample_pdf,
+                PDFPage.loads(f.read().decode('utf8'))
+            )
         preprocessor.raw_streams = map(Stream,
                                        map(lambda gt: gt['t'], ground_truth))
         preprocessor._associate_word_with_stream()

@@ -9,6 +9,7 @@ import ujson
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.pdf.text import PDFText
 from Thor.utils.FontSpec import FontSpec
 from Thor.utils.Rectangle import Rectangle
 
@@ -67,7 +68,7 @@ with given.a_pdf:
             pages = PDFPage.extract_texts(sample_pdf)
             for page in pages:
                 for word in page.words:
-                    the(word['t']).should_NOT.be_in((' ', u'\u2003'))
+                    the(word.t).should_NOT.be_in((' ', u'\u2003'))
 
         with and_.no_word_is_outside_crop_box:
             pages = PDFPage.extract_texts(sample_pdf)
@@ -75,8 +76,7 @@ with given.a_pdf:
                 crop_box = Rectangle(0, 0, page.width, page.height)
 
                 for word in page.words:
-                    word_box = Rectangle(word['x'], word['y'],
-                                         word['w'], word['h'])
+                    word_box = Rectangle(word.x, word.y, word.w, word.h)
                     the(crop_box.intersect(word_box)).should_NOT.be(None)
 
         with and_.it_can_keep_text_in_content_stream_order:
@@ -92,14 +92,8 @@ with given.a_pdf:
             FontSpec(size=20, color='ffffff'),
         ]
         p.words = [
-            {
-                'x': 0, 'y': 0, 'w': 100, 'h': 30,
-                't': u'GG', 'font': p.fonts[0]
-            },
-            {
-                'x': 100, 'y': 250, 'w': 60, 'h': 120,
-                't': u'drink water', 'font': p.fonts[1]
-            },
+            PDFText(x=0, y=0, w=100, h=30, t=u'GG', font=p.fonts[0]),
+            PDFText(x=100, y=250, w=60, h=120, t=u'drink water', font=p.fonts[1]),
         ]
         p.serialized_words = [
             {
@@ -168,14 +162,14 @@ with given.a_pdf:
             the(abs(p.height - 1.618)).should.be_less_than(1.0e-3)
 
         with and_.words_should_be_correct:
-            the(p.words[0]).should.equal({
-                'x': 3, 'y': 14, 'w': 301, 'h': 4771,
-                't': 'OK', 'font': FontSpec(size=10, color='000000')
-            })
-            the(p.words[1]).should.equal({
-                'x': 1, 'y': 618, 'w': 8451, 'h': 7781,
-                't': 'FAIL', 'font': None
-            })
+            the(p.words[0]).should.equal(PDFText(
+                x=3, y=14, w=301, h=4771,
+                t='OK', font=FontSpec(size=10, color='000000')
+            ))
+            the(p.words[1]).should.equal(PDFText(
+                x=1, y=618, w=8451, h=7781,
+                t='FAIL', font=None
+            ))
 
         with and_.fonts_shoule_be_correct:
             the(len(p.fonts)).should.equal(1)

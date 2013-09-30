@@ -11,6 +11,7 @@ import ujson
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.pdf.text import PDFText
 from Thor.preprocess.fontspec import FontSpecPreprocessor
 from Thor.utils.FontSpec import FontSpec
 
@@ -22,12 +23,10 @@ with given.a_FontSpecPreprocessor:
     sample_json = os.path.join(curr_dir, 'fixture', 'chew_people_11.json')
 
     with closing(open(sample_json)) as f:
-        page = ujson.loads(f.read().decode('utf8'))
+        pdf_json = f.read().decode('utf8')
 
     preprocessor = FontSpecPreprocessor(
-        sample_pdf,
-        PDFPage(page_num=page['page'], width=page['width'],
-                height=page['height'], words=page['data'])
+        sample_pdf, PDFPage.loads(pdf_json)
     )
 
     with then.it_can_extract_all_font_specs_used_by_a_pdf_page:
@@ -114,8 +113,7 @@ with given.a_FontSpecPreprocessor:
         }
         preprocessor = FontSpecPreprocessor(
             sample_pdf,
-            PDFPage(page_num=page['page'], width=page['width'],
-                    height=page['height'], words=page['data'])
+            PDFPage.loads(ujson.dumps(page, ensure_ascii=False))
         )
         preprocessor._words = words = [
             {
@@ -145,15 +143,15 @@ with given.a_FontSpecPreprocessor:
             }
         ]
 
-        the(preprocessor.match(words[0])).should.equal(page['data'][0])
-        the(preprocessor.match(words[1])).should.equal(page['data'][1])
-        the(preprocessor.match(words[2])).should.equal(page['data'][2])
-        the(preprocessor.match(words[3])).should.equal(page['data'][2])
+        the(preprocessor.match(words[0])).should.equal(PDFText.create_from_dict(page['data'][0]))
+        the(preprocessor.match(words[1])).should.equal(PDFText.create_from_dict(page['data'][1]))
+        the(preprocessor.match(words[2])).should.equal(PDFText.create_from_dict(page['data'][2]))
+        the(preprocessor.match(words[3])).should.equal(PDFText.create_from_dict(page['data'][2]))
         the(preprocessor.match(words[4])).should.be(None)
 
 
     with then.every_word_object_of_a_pdf_page_will_have_its_font_spec:
         page = preprocessor.run()
-        the(page.words[0]['font']).should.equal(FontSpec(38, "221714"))
-        the(page.words[1]['font']).should.equal(FontSpec(27, "221714"))
-        the(page.words[2]['font']).should.equal(FontSpec(8, "221714"))
+        the(page.words[0].font).should.equal(FontSpec(38, "221714"))
+        the(page.words[1].font).should.equal(FontSpec(27, "221714"))
+        the(page.words[2].font).should.equal(FontSpec(8, "221714"))

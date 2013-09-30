@@ -34,7 +34,7 @@ class RawTextPreprocessor(object):
     def __init__(self, pdf_filename, page):
 
         self.page = page
-        self.words = map(Word, page.words)
+        self.words = map(Word.create_from_pdftext, page.words)
         self.raw_streams = map(Stream, page.extract_raw_texts(pdf_filename,
                                                               page.page_num))
         self._associate_word_with_stream()
@@ -148,6 +148,11 @@ class Word(object):
 
         self._word_obj = word_obj
         self.matches = []
+
+    @classmethod
+    def create_from_pdftext(cls, pdftext):
+
+        return cls(pdftext.__json__())
 
     def __getitem__(self, attr):
 

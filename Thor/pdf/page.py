@@ -10,6 +10,7 @@ from pyquery import PyQuery
 import ujson
 
 # local library imports
+from Thor.pdf.text import PDFText
 from Thor.utils.FontSpec import FontSpec
 from Thor.utils.Rectangle import Rectangle
 
@@ -24,7 +25,7 @@ class PDFPage(object):
         page_num: An integer indicating the current page number.
         width: The width of the page
         height: The height of the page
-        words: A list of words with bounding box information.
+        words: A list of PDFText instances.
         fonts: A list of FontSpec instances.
 
     """
@@ -34,21 +35,23 @@ class PDFPage(object):
         self.page_num = page_num
         self.width = width
         self.height = height
-        self.words = words
+        self.words = words or []
         self.fonts = fonts or []
 
-    def __json__(self):
+        if not all((isinstance(w, PDFText) for w in self.words)):
+            raise ValueError(unicode(self.words))
 
-        words = map(lambda w: w.copy(), self.words)
-        for word in words:
-            word['font'] = word['font'].serializable if 'font' in word else None
+        if not all((isinstance(f, FontSpec) for f in self.fonts)):
+            raise ValueError('fonts should be instances of FontSpec')
+
+    def __json__(self):
 
         return {
             'page': self.page_num,
             'width': self.width,
             'height': self.height,
-            'data': words,
-            'fonts': map(lambda f: f.serializable, self.fonts),
+            'data': map(lambda w: w.__json__(), self.words),
+            'fonts': map(lambda f: f.__json__(), self.fonts),
         }
 
     def serialize(self):
@@ -70,18 +73,13 @@ class PDFPage(object):
 
         deserialized = ujson.loads(serialized)
 
-        ret = PDFPage()
-        ret.page_num = deserialized.get('page', 0)
-        ret.width = deserialized.get('width', 0)
-        ret.height = deserialized.get('height', 0)
-        ret.words = deserialized.get('data')
-        for word in ret.words:
-            word['font'] = FontSpec.deserialize(word.get('font'))
-
-        ret.fonts = map(lambda f: FontSpec.deserialize(f),
-                        deserialized.get('fonts', []))
-
-        return ret
+        return PDFPage(page_num=deserialized.get('page', 0),
+                       width=deserialized.get('width', 0),
+                       height=deserialized.get('height', 0),
+                       words=map(PDFText.create_from_dict,
+                                 deserialized.get('data')),
+                       fonts=map(FontSpec.deserialize,
+                                 deserialized.get('fonts', [])))
 
     @classmethod
     def dumps(cls, page):
@@ -248,6 +246,7 @@ def _create_page(filename, page_num, page_data):
 
     width, height = page_data['width'], page_data['height']
     words = _filter_invisible_words(width, height, page_data['data'])
+    words = map(PDFText.create_from_dict, words)
 
     return PDFPage(page_num=page_num, width=width, height=height, words=words)
 
@@ -272,6 +271,5 @@ def _filter_invisible_words(width, height, words):
         rect = Rectangle(word['x'], word['y'], word['w'], word['h'])
         if rect & world_rect is not None:
             ret.append(word)
-
 
     return ret

@@ -40,11 +40,15 @@ class FontSpec(object):
 
         return not self == other
 
+    def __json__(self):
+
+        return {'size': self.size, 'color': self.color}
+
     @property
     def serializable(self):
         """A JSON serializable."""
 
-        return {'size': self.size, 'color': self.color}
+        return self.__json__()
 
     @classmethod
     def deserialize(cls, serialized):

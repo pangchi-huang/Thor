@@ -59,8 +59,8 @@ class FontSpecPreprocessor(object):
         center_x, center_y = x + w / 2., y + h / 2.
 
         for word in self.page.words:
-            if  (word['x'] <= center_x <= word['x'] + word['w']) and \
-                (word['y'] <= center_y <= word['y'] + word['h']):
+            if  (word.x <= center_x <= word.x + word.w) and \
+                (word.y <= center_y <= word.y + word.h):
                 return word
 
         return None
@@ -92,7 +92,7 @@ class FontSpecPreprocessor(object):
                     fontspec_found = False
                     for fontspec in self.page.fonts:
                         if fontspec == most_fontspec[0]:
-                            word['font'] = fontspec
+                            word._font = fontspec
                             fontspec_found = True
                             break
 
