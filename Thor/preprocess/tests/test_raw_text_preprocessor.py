@@ -158,7 +158,6 @@ with given.a_RawTextPreprocessor:
     with provided.a_raw_stream_has_overlapping_words_and_at_least_3_words:
 
         with then.it_should_try_to_discard_outlier_words:
-
             the(preprocessor.raw_streams[19].discard_outliers()).should.be(True)
             the(preprocessor.raw_streams[7].discard_outliers()).should.be(True)
 

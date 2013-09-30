@@ -386,7 +386,7 @@ class DocumentSpace(object):
 
         if self.reading_direction == self.LEFT_TO_RIGHT:
             avg_char_size = 1. * sum((word.w for word in self.words)) / num_char
-            segments = self.segment_words_horizontally(scale=0.7)
+            segments = self.segment_words_horizontally(scale=0.5)
             map(lambda segment: segment.sort(key=lambda word: word.x), segments)
             median_x = _median(map(lambda segment: segment[0].x, segments))
 
@@ -402,13 +402,13 @@ class DocumentSpace(object):
                     ret.append('\n' + paragraph)
                     prev_fontspec = longest_fontspec
                 elif segment[0].x > median_x + avg_char_size * 0.75:
-                    ret.append('\n' + paragraph)
+                    ret.append('\n\n' + paragraph)
                 else:
                     ret.append(paragraph)
 
         else:
             avg_char_size = 1. * sum((word.h for word in self.words)) / num_char
-            segments = self.segment_words_vertically(scale=0.7)
+            segments = self.segment_words_vertically(scale=0.5)
             map(lambda segment: segment.sort(key=lambda word: word.y), segments)
             median_y = _median(map(lambda segment: segment[0].y, segments))
             #print 'avg_char_size:', avg_char_size
@@ -427,7 +427,7 @@ class DocumentSpace(object):
                     ret.append('\n' + paragraph)
                     prev_fontspec = longest_fontspec
                 elif segment[0].y > median_y + avg_char_size * 0.75:
-                    ret.append('\n' + paragraph)
+                    ret.append('\n\n' + paragraph)
                 else:
                     ret.append(paragraph)
 
@@ -443,7 +443,9 @@ class DocumentSpace(object):
             subspace.traverse(ret)
 
 
-def _median(sorted_data):
+def _median(data):
+
+    sorted_data = sorted(data)
 
     half = len(sorted_data) / 2
     if len(sorted_data) % 2 == 0:
