@@ -38,6 +38,12 @@ class PDFPage(object):
         self.words = words or []
         self.fonts = fonts or []
 
+        if not all((isinstance(w, PDFText) for w in self.words)):
+            raise ValueError(unicode(self.words))
+
+        if not all((isinstance(f, FontSpec) for f in self.fonts)):
+            raise ValueError('fonts should be instances of FontSpec')
+
     def __json__(self):
 
         return {

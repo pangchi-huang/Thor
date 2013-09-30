@@ -33,30 +33,37 @@ class PDFText(object):
 
     @property
     def x(self):
+
         return self._rect.x
 
     @property
     def y(self):
+
         return self._rect.y
 
     @property
     def w(self):
+
         return self._rect.w
 
     @property
     def h(self):
+
         return self._rect.h
 
     @property
     def t(self):
+
         return self._rect.t
 
     @property
     def font(self):
+
         return self._font
 
     @property
     def orientation(self):
+
         return self._rect.orientation
 
     def __repr__(self):
