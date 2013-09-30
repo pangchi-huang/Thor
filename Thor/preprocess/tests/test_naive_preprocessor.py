@@ -11,17 +11,19 @@ import ujson
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.pdf.text import PDFText
 from Thor.preprocess.naive import NaivePreprocessor
 
 
 with given.a_NaivePreprocessor:
 
     with when.it_normalizes_text_blocks_to_width_1000px:
-        words = map(lambda i: {'x': 1 * i, 'y': 2 * i, 'w': 3 * i, 'h': 4 * i},
+        words = map(lambda i: dict(x=1 * i, y=2 * i, w=3 * i, h=4 * i, t=''),
                     xrange(10))
         preprocessor = NaivePreprocessor(
             'test.pdf',
-            PDFPage(page_num=1, width=200, height=200, words=words)
+            PDFPage(page_num=1, width=200, height=200,
+                    words=map(PDFText.create_from_dict, words))
         )
         preprocessor._scale_words(1000 / 200.)
 
@@ -45,7 +47,8 @@ with given.a_NaivePreprocessor:
         ]
         preprocessor = NaivePreprocessor(
             'test.pdf',
-            PDFPage(page_num=1, width=200, height=200, words=words)
+            PDFPage(page_num=1, width=200, height=200,
+                    words=map(PDFText.create_from_dict, words))
         )
 
         with provided.a_word_only_has_single_character_or_equal_dimension:
@@ -108,6 +111,7 @@ with given.a_NaivePreprocessor:
                 {'x': 87.112183, 'y': 290.500072, 'w': 15.785401, 'h': 43.518811, 't': u'麗寶'},
                 {'x': 73.697287, 'y': 315.212643, 'w': 15.94485, 'h': 72.400248, 't': u'麗寶'},
             ]
+            words = map(PDFText.create_from_dict, words)
             preprocessor = NaivePreprocessor(
                 'test.pdf',
                 PDFPage(page_num=1, width=1000, height=1000, words=words)
@@ -177,7 +181,10 @@ with given.a_NaivePreprocessor:
         sample_pdf = os.path.join(curr_dir, 'fixture', 'chew_people_11.pdf')
 
         with closing(open(sample_json)) as f:
-            sample = ujson.loads(f.read().decode('utf8'))
+            preprocessor = NaivePreprocessor(
+                sample_pdf,
+                PDFPage.loads(f.read().decode('utf8'))
+            )
 
         ground_truth = [
             {"x": 145.4531, "y": 484.5423,  "w": 200,     "h": 42,        "t": u"台中秋虹谷"},
@@ -202,11 +209,6 @@ with given.a_NaivePreprocessor:
             {"x": 128.0446, "y": 547.98075, "w": 10.45,   "h": 135.85,    "t": u"辦法會，或大場面的告別式。"},
         ]
 
-        preprocessor = NaivePreprocessor(
-            sample_pdf,
-            PDFPage(page_num=sample['page'], width=sample['width'],
-                    height=sample['height'], words=sample['data'])
-        )
         page = preprocessor.run()
 
         print ujson.dumps(page.words, ensure_ascii=False)

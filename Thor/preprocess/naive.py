@@ -6,6 +6,7 @@
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.pdf.text import PDFText
 from Thor.utils.Point import Point
 from Thor.utils.Rectangle import Rectangle
 
@@ -34,7 +35,7 @@ class NaivePreprocessor(object):
                  font_ratio=0.9):
 
         self.page = page
-        self.words = map(Word, page.words)
+        self.words = map(Word.create_from_pdftext, page.words)
         self.factory = WordFactory(min_dist, font_ratio)
 
         self._normalize_width = normalize_width
@@ -104,6 +105,11 @@ class Word(object):
 
         self._word_obj = word_obj
         self._orientation = None
+
+    @classmethod
+    def create_from_pdftext(cls, pdftext):
+
+        return cls(pdftext.__json__())
 
     def __getitem__(self, attr):
 
