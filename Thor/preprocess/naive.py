@@ -77,7 +77,8 @@ class NaivePreprocessor(object):
                 break
 
         self._scale_words(1.0 / scale_factor)
-        ret.words = map(lambda w: w._word_obj, self.words)
+        ret.words = map(lambda w: PDFText.create_from_dict(w._word_obj),
+                        self.words)
 
         return ret
 

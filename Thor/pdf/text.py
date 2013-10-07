@@ -23,6 +23,7 @@ class PDFText(object):
         t: The text.
         font: The instance of FontSpec.
         orientation: The text reading direction. See TextRectangle.
+        rect: The TextRectangle instance.
 
     """
 
@@ -90,6 +91,11 @@ class PDFText(object):
             't': self.t,
             'font': self.font.__json__() if self.font is not None else None,
         }
+
+    @property
+    def rect(self):
+
+        return self._rect
 
     @classmethod
     def create_from_dict(cls, value_dict):

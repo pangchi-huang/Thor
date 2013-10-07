@@ -216,10 +216,9 @@ with given.a_RawTextPreprocessor:
             found = False
 
             for word in page.words:
-                if word['t'] == merged_word:
+                if word.t == merged_word:
                     for attr in 'xywh':
-                        print attr, word[attr], expected_word[attr]
-                        the(abs(word[attr] - expected_word[attr])).\
+                        the(abs(getattr(word, attr) - expected_word[attr])).\
                         should.be_less_than(1.0e-3)
 
                     found = True
@@ -257,11 +256,11 @@ with given.a_RawTextPreprocessor:
             for gt in ground_truth:
                 match = False
                 for word in page.words:
-                    if abs(word['x'] - gt['x']) < 1.0e-3:
+                    if abs(word.x - gt['x']) < 1.0e-3:
                         for attr in 'xywh':
-                            the(abs(word[attr] - gt[attr])).\
+                            the(abs(getattr(word, attr) - gt[attr])).\
                             should.be_less_than(1.0e-3)
-                        the(word['t']).should.equal(gt['t'])
+                        the(word.t).should.equal(gt['t'])
                         match = True
                         break
 

@@ -7,6 +7,7 @@ from itertools import combinations, permutations
 
 # local library imports
 from Thor.pdf.page import PDFPage
+from Thor.pdf.text import PDFText
 from Thor.utils.Point import Point
 from Thor.utils.Rectangle import Rectangle
 
@@ -131,6 +132,8 @@ class RawTextPreprocessor(object):
         for word_ix, word in enumerate(self.words):
             if flags[word_ix]:
                 ret.words.append(word._word_obj)
+
+        ret.words = map(PDFText.create_from_dict, ret.words)
 
         return ret
 

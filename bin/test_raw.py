@@ -21,7 +21,7 @@ def main(argv):
 
     page = PDFPage.extract_texts(filename, [page_num])[0]
     for ix, w in enumerate(page.words):
-        out = '%02d: %s' % (ix + 1, w['t'])
+        out = '%02d: %s' % (ix + 1, w.t)
         print out.encode('utf8')
 
     print '-----------------------------------------------------------'
@@ -29,7 +29,7 @@ def main(argv):
     preprocessor = RawTextPreprocessor(filename, page)
     page = preprocessor.run()
     for ix, w in enumerate(page.words):
-        out = '%02d: %s' % (ix + 1, w['t'])
+        out = '%02d: %s' % (ix + 1, w.t)
         print out.encode('utf8')
 
     print '-----------------------------------------------------------'
