@@ -220,11 +220,11 @@ with given.a_NaivePreprocessor:
         for word in page.words:
             match = False
             for truth in ground_truth:
-                if word['t'] == truth['t']:
-                    the(abs(word['x'] - truth['x'])).should.be_less_than(1.0e-3)
-                    the(abs(word['y'] - truth['y'])).should.be_less_than(1.0e-3)
-                    the(abs(word['w'] - truth['w'])).should.be_less_than(1.0e-3)
-                    the(abs(word['h'] - truth['h'])).should.be_less_than(1.0e-3)
+                if word.t == truth['t']:
+                    the(abs(word.x - truth['x'])).should.be_less_than(1.0e-3)
+                    the(abs(word.y - truth['y'])).should.be_less_than(1.0e-3)
+                    the(abs(word.w - truth['w'])).should.be_less_than(1.0e-3)
+                    the(abs(word.h - truth['h'])).should.be_less_than(1.0e-3)
                     match = True
                     break
 
