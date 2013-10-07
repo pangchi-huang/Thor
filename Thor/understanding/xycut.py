@@ -19,7 +19,7 @@ class XYCut(object):
         if len(page.words) == 0:
             return []
 
-        root_space = DocumentSpace(map(TextRectangle.create, page.words))
+        root_space = DocumentSpace(map(lambda w: w.rect, page.words))
         self.cut(root_space, '')
 
         ret = []
