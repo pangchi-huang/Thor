@@ -67,7 +67,6 @@ class Word(object):
     def _expect_correct_marker(self, line):
 
         if not (line.startswith('<word') and line.endswith('</word>')):
-            print line
             raise WordError('Not a valid word markup')
 
     def _extract_word_attributes(self, line):
@@ -218,7 +217,7 @@ class PDFXMLParser(object):
 
         return self.pages
 
-    def _find_enclosing_doc_marker(xml_string):
+    def _find_enclosing_doc_marker(self, xml_string):
 
         start = xml_string.find('<doc>')
         end = xml_string.rfind('</doc>') + 6
