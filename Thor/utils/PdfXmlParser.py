@@ -191,7 +191,8 @@ class PDFXMLParser(object):
     """
 
     def __init__(self, xml_string):
-        self.xml_lines = xml_string.split('\n')
+        self.xml_lines = self._find_enclosing_doc_marker(xml_string)\
+                             .split('\n')
         self.pages = []
         self.line_ix = 0
 
@@ -217,6 +218,12 @@ class PDFXMLParser(object):
 
         return self.pages
 
+    def _find_enclosing_doc_marker(xml_string):
+
+        start = xml_string.find('<doc>')
+        end = xml_string.rfind('</doc>') + 6
+        return xml_string[start:end]
+
 
 def main(argv):
 
@@ -227,10 +234,7 @@ def main(argv):
     with closing(open(argv[1], 'rb')) as f:
         data = f.read().decode('utf8')
 
-    # find <doc>...</doc>
-    start = data.find('<doc>')
-    end = data.find('</doc>') + 6
-    parsed = PDFXMLParser(data[start:end]).run()
+    parsed = PDFXMLParser(data).run()
 
     print json.dumps(parsed, ensure_ascii=False, indent=4).encode('utf8')
 

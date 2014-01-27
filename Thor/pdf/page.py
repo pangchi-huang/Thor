@@ -12,6 +12,7 @@ import ujson
 # local library imports
 from Thor.pdf.text import PDFText
 from Thor.utils.FontSpec import FontSpec
+from Thor.utils.PdfXmlParser import PDFXMLParser
 from Thor.utils.Rectangle import Rectangle
 
 
@@ -203,40 +204,9 @@ class PDFPage(object):
 def _parse_word_bboxes(html):
 
     with closing(open(html, 'rb')) as f:
-        html_txt = f.read().decode('utf8')
-        start = html_txt.find('<doc>')
-        end = html_txt.find('</doc>') + 6
+        parser = PDFXMLParser(f.read().decode('utf8'))
 
-    pages = []
-
-    jq = PyQuery(html_txt[start:end])
-    page_elements = jq('page')
-    for i, pg in enumerate(page_elements):
-        page_obj = {
-            'width': float(pg.attrib['width']),
-            'height': float(pg.attrib['height']),
-            'page': i + 1,
-            'data': [],
-        }
-
-        word_elements = pg.findall('word')
-        for word in word_elements:
-            word_attr = word.attrib
-            min_x = float(word_attr.get('xMin') or word_attr['xmin'])
-            max_x = float(word_attr.get('xMax') or word_attr['xmax'])
-            min_y = float(word_attr.get('yMin') or word_attr['ymin'])
-            max_y = float(word_attr.get('yMax') or word_attr['ymax'])
-            page_obj['data'].append({
-                'x': min_x,
-                'y': min_y,
-                'w': max_x - min_x,
-                'h': max_y - min_y,
-                't': word.text or ' ',
-            })
-
-        pages.append(page_obj)
-
-    return pages
+    return parser.run()
 
 def _create_page(filename, page_num, page_data):
 
