@@ -33,24 +33,38 @@ class Word(object):
 
     html_parser = HTMLParser()
 
-    def __init__(self, line):
+    def __init__(self, lines, line_ix):
 
         self.x_min = self.y_min = self.x_max = self.y_max = 0
         self.text = None
-        self.line = line
+        self.lines = lines
+        self.line_ix = line_ix
 
     def run(self):
         """Parse word attributes and text from xml."""
 
-        self._expect_correct_marker(self.line)
+        self._expect_correct_marker()
 
-        ix = self.line.find('>')
+        lines, line_ix = [], self.line_ix
+        line = self.lines[line_ix].rstrip()
+        while not line.endswith('</word>'):
+            lines.append(line)
+            line_ix += 1
+            line = self.lines[line_ix].rstrip()
+        else:
+            lines.append(line)
+            line_ix += 1
+
+        line = '\n'.join(lines).strip()
+        ix = line.find('>')
         if ix == -1:
             raise WordError('Not a valid beginning tag for word object')
 
         # between '>' and '</word>'
-        self.text = self.html_parser.unescape(self.line[ix + 1:-7])
-        self._extract_word_attributes(self.line[5:ix])
+        self.text = self.html_parser.unescape(line[ix + 1:-7])
+        self._extract_word_attributes(line[5:ix])
+
+        return line_ix
 
     @property
     def __json__(self):
@@ -64,9 +78,10 @@ class Word(object):
             't': self.text or ' '
         }
 
-    def _expect_correct_marker(self, line):
+    def _expect_correct_marker(self):
 
-        if not (line.startswith('<word') and line.endswith('</word>')):
+        line = self.lines[self.line_ix].strip()
+        if not line.startswith('<word'):
             raise WordError('Not a valid word markup')
 
     def _extract_word_attributes(self, line):
@@ -135,8 +150,7 @@ class Page(object):
             if line == '</page>':
                 return self.line_ix + 1
 
-            self._extract_word(line)
-            self.line_ix += 1
+            self.line_ix = self._extract_word()
 
         raise PageError('Do not find </page>')
 
@@ -148,7 +162,7 @@ class Page(object):
             'width': self.width,
             'height': self.height,
             'page': self.page_num,
-            'data': map(lambda w: w.__json__, self.words)
+            'data': self.words
         }
 
     def _expect_correct_marker(self, line):
@@ -172,11 +186,13 @@ class Page(object):
         if not (is_width_extracted and is_height_extracted):
             raise PageError('Do not have width or height information')
 
-    def _extract_word(self, line):
+    def _extract_word(self):
 
-        word = Word(line)
-        word.run()
-        self.words.append(word)
+        word = Word(self.xml_lines, self.line_ix)
+        self.line_ix = word.run()
+        self.words.append(word.__json__)
+
+        return self.line_ix
 
 
 class PDFXMLParser(object):
@@ -239,4 +255,5 @@ def main(argv):
 
 
 if __name__ == '__main__':
+
     main(sys.argv)
