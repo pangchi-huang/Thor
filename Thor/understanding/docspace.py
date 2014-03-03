@@ -1,6 +1,7 @@
 #!/usr/bin/env
 
 # standard library imports
+import string
 
 # third party related imports
 
@@ -392,7 +393,10 @@ class DocumentSpace(object):
 
             prev_fontspec = None
             for segment in segments:
-                paragraph = ''.join((word.t for word in segment))
+                paragraph = self.concat_words(segment)
+                if len(paragraph) == 0:
+                    continue
+
                 longest_fontspec = max(
                     map(lambda word: (word.w, word.font), segment),
                     key=lambda x: x[0]
@@ -404,6 +408,10 @@ class DocumentSpace(object):
                 elif segment[0].x > median_x + avg_char_size * 0.75:
                     ret.append('\n\n' + paragraph)
                 else:
+                    if len(ret) > 0 and ret[-1][-1] in string.letters:
+                        if paragraph[0][0] in string.letters:
+                            ret.append(' ')
+
                     ret.append(paragraph)
 
         else:
@@ -417,7 +425,10 @@ class DocumentSpace(object):
             prev_fontspec = None
             for segment in segments:
                 #print [word.y for word in segment]
-                paragraph = ''.join((word.t for word in segment))
+                paragraph = self.concat_words(segment)
+                if len(paragraph) == 0:
+                    continue
+
                 longest_fontspec = max(
                     map(lambda word: (word.h, word.font), segment),
                     key=lambda x: x[0]
@@ -429,6 +440,10 @@ class DocumentSpace(object):
                 elif segment[0].y > median_y + avg_char_size * 0.75:
                     ret.append('\n\n' + paragraph)
                 else:
+                    if len(ret) > 0 and ret[-1][-1] in string.letters:
+                        if paragraph[0][0] in string.letters:
+                            ret.append(' ')
+
                     ret.append(paragraph)
 
         return ''.join(ret)
@@ -441,6 +456,26 @@ class DocumentSpace(object):
 
         for subspace in self.subspaces:
             subspace.traverse(ret)
+
+    def concat_words(self, words):
+
+        ret = []
+
+        for word in words:
+            if len(word.t) == 0:
+                continue
+
+            if len(ret) == 0:
+                ret.append(word.t)
+                continue
+
+            if ret[-1][-1] in string.letters:
+                if word.t[0] in string.letters:
+                    ret.append(' ')
+
+            ret.append(word.t)
+
+        return ''.join(ret)
 
 
 def _median(data):
