@@ -6,6 +6,7 @@ from HTMLParser import HTMLParser
 import json
 import re
 import sys
+import unicodedata
 
 # third party related imports
 
@@ -62,6 +63,7 @@ class Word(object):
 
         # between '>' and '</word>'
         self.text = self.html_parser.unescape(line[ix + 1:-7])
+        self.text = self._remove_control_charaters(self.text)
         self._extract_word_attributes(line[5:ix])
 
         return line_ix
@@ -75,7 +77,7 @@ class Word(object):
             'y': self.y_min,
             'w': self.x_max - self.x_min,
             'h': self.y_max - self.y_min,
-            't': self.text or ' '
+            't': self.text
         }
 
     def _expect_correct_marker(self):
@@ -107,6 +109,10 @@ class Word(object):
         if not (is_x_min_extracted and is_x_max_extracted and \
                 is_y_max_extracted and is_y_max_extracted):
             raise WordError('Do not extract word geometry information')
+
+    def _remove_control_charaters(self, t):
+
+        return ''.join(filter(lambda c: unicodedata.category(c)[0] != 'C', t))
 
 
 class PageError(Exception): pass
@@ -190,7 +196,9 @@ class Page(object):
 
         word = Word(self.xml_lines, self.line_ix)
         self.line_ix = word.run()
-        self.words.append(word.__json__)
+
+        if word.__json__['t']:
+            self.words.append(word.__json__)
 
         return self.line_ix
 
