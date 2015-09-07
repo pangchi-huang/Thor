@@ -27,6 +27,19 @@ class XYCut(object):
 
         return ret
 
+    def reorder_words(self, words):
+
+        if len(words) == 0:
+            return []
+
+        root_space = DocumentSpace(map(lambda w: w.rect, words))
+        self.cut(root_space, '')
+
+        ret = []
+        root_space.sort_words(ret)
+
+        return ret
+
     def cut(self, space, prefix):
 
         if len(space.words) <= 1:
