@@ -448,6 +448,42 @@ class DocumentSpace(object):
 
         return ''.join(ret)
 
+    def _put_words_in_order(self):
+
+        if len(self.words) == 1:
+            return self.words
+
+        ret = []
+
+        if self.reading_direction == self.LEFT_TO_RIGHT:
+            segments = self.segment_words_horizontally(scale=0.5)
+            map(
+                lambda segment: segment.sort(key=lambda word: word.x),
+                segments
+            )
+
+        else:
+            segments = self.segment_words_vertically(scale=0.5)
+            map(
+                lambda segment: segment.sort(key=lambda word: word.y),
+                segments
+            )
+
+        for segment in segments:
+            for word in segment:
+                ret.append(word)
+        return ret
+
+    def sort_words(self, ret=None):
+
+        if self.subspaces is None or len(self.subspaces) == 0:
+            for word in self._put_words_in_order():
+                ret.append(word)
+            return
+
+        for subspace in self.subspaces:
+            subspace.sort_words(ret)
+
     def traverse(self, ret=None):
 
         if self.subspaces is None or len(self.subspaces) == 0:
