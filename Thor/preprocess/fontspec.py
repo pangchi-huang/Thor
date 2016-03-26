@@ -112,6 +112,7 @@ class FontSpecPreprocessor(object):
                '-f', str(self.page.page_num),
                '-l', str(self.page.page_num),
                '-stdout',
+               '-nodrm',
                self.pdf_filename)
         xml = subprocess.check_output(cmd)
         self.parse_xml(xml.decode('utf8'))
